@@ -45,11 +45,11 @@ function generateFigure(theConeMosaic, theLens, pdfFileName, plotTitle)
     theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
     ax = theAxes{1,1};
 
-    plot(ax,theConeMosaic.wave, theConeMosaic.macular.transmittance, 'k-', 'LineWidth', 3);
+    plot(ax,theConeMosaic.wave, theConeMosaic.macular.transmittance, 'k-', 'LineWidth', 4);
     hold(ax, 'on');
     p1 = plot(ax,theConeMosaic.wave, theConeMosaic.macular.transmittance, 'm-', 'LineWidth', 2);
     hold(ax, 'on');
-    plot(ax, theConeMosaic.wave,  theLens.transmittance, 'k-', 'LineWidth', 3.0);
+    plot(ax, theConeMosaic.wave,  theLens.transmittance, 'k-', 'LineWidth', 4.0);
     p2 = plot(ax, theConeMosaic.wave,  theLens.transmittance, 'y-', 'LineWidth', 2);
 
     p3 = plot(ax, theConeMosaic.wave,  theLens.transmittance .* theConeMosaic.macular.transmittance, 'k--', 'LineWidth', 2);
@@ -71,14 +71,11 @@ function generateFigure(theConeMosaic, theLens, pdfFileName, plotTitle)
     PublicationReadyPlotLib.applyFormat(ax,ff);
     PublicationReadyPlotLib.offsetAxes(ax, ff, xLims, yLims);
 
-    
-
     theFiguresDir = fullfile(ISETBioPaperAndGrantCodeRootDirectory, 'local', mfilename);
     if (~exist(theFiguresDir,'dir'))
         mkdir(theFiguresDir);
     end
 
-    
     thePDFfileName = fullfile(theFiguresDir, pdfFileName);
     NicePlot.exportFigToPDF(thePDFfileName,hFig,  300);
 
