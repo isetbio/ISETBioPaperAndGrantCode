@@ -11,7 +11,7 @@ function plotConeQuantalEfficienties()
 
     % Flag indicating whether to plot cone quantal efficiencies at the
     % cornea or not
-    efficienciesAtCornea = true;
+    efficienciesAtCornea = ~true;
 
     % Generate a treeshrew cone mosaic object to retrieve the macular pigment
     theTreeShrewConeMosaic = cMosaicTreeShrewCreate(...
@@ -29,14 +29,16 @@ function plotConeQuantalEfficienties()
             quantalEfficiencies(:,iConeType) = theTreeShrewConeMosaic.qe(:,iConeType) .* theTreeShrewLens.transmittance;
         end
         pdfFileName = 'TreeShrewQuantalEfficienciesAtCornea.pdf';
+        plotTitle = 'tree shrew (cornea-referred)';
     else
         % Efficiencies of cone pigments (including the effect of the macular pigment)
         quantalEfficiencies = theTreeShrewConeMosaic.qe;
         pdfFileName = 'TreeShrewQuantalEfficiencies.pdf';
+         plotTitle = 'tree shrew (retina-referred)';
     end
 
     % Plot the quantal efficiencies and save the plot in a pdf file
-    generateFigure(theTreeShrewConeMosaic.wave, quantalEfficiencies,  pdfFileName, 'tree shrew');
+    generateFigure(theTreeShrewConeMosaic.wave, quantalEfficiencies,  pdfFileName, plotTitle);
 
 
     % Generate a human cone mosaic object to retrieve the macular pigment
@@ -55,14 +57,16 @@ function plotConeQuantalEfficienties()
             quantalEfficiencies(:,iConeType) = theHumanConeMosaic.qe(:,iConeType) .* theHumanLens.transmittance;
         end
         pdfFileName = 'HumanQuantalEfficienciesAtCornea.pdf';
+        plotTitle = 'human (cornea-referred)';
     else
         % Efficiencies of cone pigments (including the effect of the macular pigment)
         quantalEfficiencies = theHumanConeMosaic.qe;
         pdfFileName = 'HumanQuantalEfficiencies.pdf';
+        plotTitle = 'human (retina-referred)';
     end
 
     % Plot the quantal efficiencies and save the plot in a pdf file
-    generateFigure(theHumanConeMosaic.wave, quantalEfficiencies,  pdfFileName, 'human');
+    generateFigure(theHumanConeMosaic.wave, quantalEfficiencies,  pdfFileName, plotTitle);
 
 
 end
