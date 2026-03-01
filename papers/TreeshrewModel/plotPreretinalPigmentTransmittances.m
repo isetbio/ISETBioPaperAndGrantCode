@@ -1,25 +1,39 @@
 function plotPreretinalPigmentTransmittances()
+% Plot the pre-retinal pigment transmittances of the treeshrew and of the
+% human retina
+%
+% Description:
+%   Plot the pre-retinal pigment transmittances of the treeshrew and of the
+%   human retina. 
 
+% History:
+%    03/01/26  NPC  Wrote it.
+
+    % Generate a treeshrew cone mosaic object to retrieve the macular pigment
     theConeMosaic = cMosaicTreeShrewCreate(...
         'sizeDegs', [1 1]);
     
+    % Generate a treeshrew lens object
     theLens = lensTreeShrewCreate(...
         'wave', theConeMosaic.wave);
     
+    % Plot the lens and macular pigment transmittances and save the plot in
+    % a pdf file
     pdfFileName = 'TreeShrewLensTransmittance.pdf';
     generateFigure(theConeMosaic, theLens, pdfFileName, 'tree shrew');
 
-
+    % Generate a human cone mosaic object to retrieve the macular pigment
     theHumanConeMosaic = cMosaic(...
         'sizeDegs', [1 1]);
     
+    % Generate a human lens object
     theHumanLens = Lens(...
         'wave', theConeMosaic.wave);
     
+    % Plot the lens and macular pigment transmittances and save the plot in
+    % a pdf file
     pdfFileName = 'HumanLensTransmittance.pdf';
     generateFigure(theHumanConeMosaic, theHumanLens, pdfFileName, 'human');
-
-
 
 end
 
