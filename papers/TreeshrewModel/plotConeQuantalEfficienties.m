@@ -88,7 +88,16 @@ function generateFigure(wavelengthSupport, quantalEfficiencies,  pdfFileName, pl
     plot(ax, wavelengthSupport, quantalEfficiencies(:,cMosaic.SCONE_ID), 'k-', 'LineWidth', 4);
     p3 = plot(ax, wavelengthSupport, quantalEfficiencies(:,cMosaic.SCONE_ID), 'c-', 'LineWidth', 2);
 
+    % Legend
     legend(ax, [p1 p2 p3], {'L-cone', 'M-cone', 'S-cone'}, 'Location', 'NorthEast');
+
+    % Legend customization
+    ff.legendBox = 'on';
+    ff.legendBackgroundAlpha = 0.5;
+    ff.legendBackgroundColor = [0.6 0.6 0.6];
+    ff.legendEdgeColor = [0.2 0.2 0.2];
+    ff.legendLineWidth = 1.0;
+
     axis (ax, 'square');
 
     xLims = [wavelengthSupport(1) wavelengthSupport(end)];

@@ -10,17 +10,17 @@ function plotPreretinalPigmentTransmittances()
 %    03/01/26  NPC  Wrote it.
 
     % Generate a treeshrew cone mosaic object to retrieve the macular pigment
-    theConeMosaic = cMosaicTreeShrewCreate(...
+    theTreeShrewConeMosaic = cMosaicTreeShrewCreate(...
         'sizeDegs', [1 1]);
     
     % Generate a treeshrew lens object
-    theLens = lensTreeShrewCreate(...
-        'wave', theConeMosaic.wave);
+    theTreeShrewLens = lensTreeShrewCreate(...
+        'wave', theTreeShrewConeMosaic.wave);
     
     % Plot the lens and macular pigment transmittances and save the plot in
     % a pdf file
     pdfFileName = 'TreeShrewLensTransmittance.pdf';
-    generateFigure(theConeMosaic, theLens, pdfFileName, 'tree shrew');
+    generateFigure(theTreeShrewConeMosaic, theTreeShrewLens, pdfFileName, 'tree shrew');
 
     % Generate a human cone mosaic object to retrieve the macular pigment
     theHumanConeMosaic = cMosaic(...
@@ -28,7 +28,7 @@ function plotPreretinalPigmentTransmittances()
     
     % Generate a human lens object
     theHumanLens = Lens(...
-        'wave', theConeMosaic.wave);
+        'wave', theHumanConeMosaic.wave);
     
     % Plot the lens and macular pigment transmittances and save the plot in
     % a pdf file
@@ -39,7 +39,7 @@ end
 
 function generateFigure(theConeMosaic, theLens, pdfFileName, plotTitle)
 
-    ff = PublicationReadyPlotLib.figureComponents('1x1 standard figure');
+    ff = PublicationReadyPlotLib.figureComponents('1x1 standard tall figure');
 	hFig = figure(1); clf;
     
     theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
@@ -54,7 +54,18 @@ function generateFigure(theConeMosaic, theLens, pdfFileName, plotTitle)
 
     p3 = plot(ax, theConeMosaic.wave,  theLens.transmittance .* theConeMosaic.macular.transmittance, 'k--', 'LineWidth', 2);
 
-    legend(ax, [p1 p2 p3], {'macular pigment', 'lens', 'combined'}, 'Location', 'SouthEast');
+    % Legend
+    legend(ax, [p1 p2 p3], {'macular pigment', 'lens', 'combined'}, ...
+        'Location', 'SouthEast');
+
+    % Legend customization
+    ff.legendBox = 'on';
+    ff.legendBackgroundAlpha = 0.5;
+    ff.legendBackgroundColor = [0.6 0.6 0.6];
+    ff.legendEdgeColor = [0.2 0.2 0.2];
+    ff.legendLineWidth = 1.0;
+
+
     axis (ax, 'square');
     
     xLims = [theConeMosaic.wave(1) theConeMosaic.wave(end)];
@@ -69,7 +80,7 @@ function generateFigure(theConeMosaic, theLens, pdfFileName, plotTitle)
     title(ax, plotTitle);
 
     PublicationReadyPlotLib.applyFormat(ax,ff);
-    PublicationReadyPlotLib.offsetAxes(ax, ff, xLims, yLims);
+    % PublicationReadyPlotLib.offsetAxes(ax, ff, xLims, yLims);
 
     theFiguresDir = fullfile(ISETBioPaperAndGrantCodeRootDirectory, 'local', mfilename);
     if (~exist(theFiguresDir,'dir'))
