@@ -1,4 +1,4 @@
-function rootPath = ISETBioPaperAndGrantCodeRootPath()
+function rootPath = ISETBioPaperAndGrantCodeRootDirectory()
 % Return the path to the ISETBioPaperAndGrantCodeRoot directory
 
 [rootPath,~] = fileparts(which(mfilename));

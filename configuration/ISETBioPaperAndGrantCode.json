@@ -56,7 +56,7 @@
 		"hook": "",
 		"importance": "",
 		"localHookTemplate": "configuration/ISETBioPaperAndGrantCodeLocalHookTemplate.m",
-		"name": "ISETBerkeleyAOTumblingE",
+		"name": "ISETBioPaperAndGrantCode",
 		"pathPlacement": "append",
 		"subfolder": "",
 		"toolboxRoot": "",
