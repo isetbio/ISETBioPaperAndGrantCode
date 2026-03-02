@@ -78,9 +78,6 @@ function generateMTFfigure(theMTFdataStruct, pdfFileName, plotTitle)
     theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
     ax = theAxes{1,1};
 
-    PublicationReadyPlotLib.applyFormat(ax,ff);
-    % PublicationReadyPlotLib.offsetAxes(ax, ff, xLims, yLims);
-
     visualizedSFcyclesPerDegree = 100;
     visualizeMTFslice(ax, theMTFdataStruct, visualizedSFcyclesPerDegree, plotTitle);
 
