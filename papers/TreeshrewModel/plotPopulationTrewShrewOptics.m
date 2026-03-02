@@ -43,14 +43,14 @@ function generateMTFfigure(sfSupportCPF, theSubjectMTFs, pdfFileName, plotTitle)
     % Plot the individual treeshre MTFs
     for iSubject = 1:size(theSubjectMTFs,1)
         p1 = plot(ax, sfSupportCPF, theSubjectMTFs(iSubject,:), 'k-', ...
-            'Color', 0.5*[0.7 0.7 0.5], 'LineWidth', 2);
+            'Color', [0.7 0.7 0.7], 'LineWidth', 2);
         hold(ax, 'on')
     end
 
     % Plot the mean across all treeshrew subjects, MTFs
     meanMTF = mean(theSubjectMTFs,1);
     plot(ax, sfSupportCPF, meanMTF, 'k-', 'LineWidth', 4);
-    p2 = plot(ax, sfSupportCPF, meanMTF, 'y-', 'LineWidth', 2);
+    p2 = plot(ax, sfSupportCPF, meanMTF, 'y-', 'LineWidth', 3);
     
     
     
@@ -64,7 +64,7 @@ function generateMTFfigure(sfSupportCPF, theSubjectMTFs, pdfFileName, plotTitle)
     xlabel(ax, 'spatial frequency (c/deg)');
     ylabel(ax, 'treeshrew MTFs (ISETBio)');
     set(ax, 'XLim', [0 visualizedSFcyclesPerDegree], 'YLim', [0 1]);
-    set(ax, 'XTick', 0:5:100, 'yTick', 0:0.2:1, 'Color', [0 0 0]);
+    set(ax, 'XTick', 0:5:100, 'yTick', 0:0.2:1, 'XColor', [0 0 0], 'YColor', [0 0 0]);
     grid(ax, 'on')
 
     % Load the CSFdata of Saidak
@@ -73,9 +73,9 @@ function generateMTFfigure(sfSupportCPF, theSubjectMTFs, pdfFileName, plotTitle)
 
     % Now lets add on the right the CSF data of Saidak et al.
     yyaxis(ax, 'right');
-    p3 = plot(csfData.sf, csfData.csf, 'bs--', ...
-        'LineWidth', 1.5, ...
-        'MarkerFaceColor', 'c', 'MarkerEdgeColor', 'b', 'MarkerSize', 14);
+    p3 = plot(csfData.sf, csfData.csf, 'o', ...
+        'LineWidth', 2, 'Color', 'c', ...
+        'MarkerFaceColor', 'c', 'MarkerEdgeColor', 'b', 'MarkerSize', 20);
    
     legend(ax, [p1 p2 p3], {'individual MTFs', 'population MTF', 'CSF'});
 
@@ -83,7 +83,7 @@ function generateMTFfigure(sfSupportCPF, theSubjectMTFs, pdfFileName, plotTitle)
     
     title(ax, plotTitle);
     set(ax, 'XLim', [0 visualizedSFcyclesPerDegree], 'YLim', [0 120]);
-    set(ax, 'XTick', 0:5:100, 'yTick', 0:20:200, 'Color', [0.5 0.8 1]);
+    set(ax, 'XTick', 0:5:100, 'yTick', 0:20:200, 'XColor', [0.5 0.8 1], 'YColor', [0.5 0.8 1]);
     grid(ax, 'on')
 
 
