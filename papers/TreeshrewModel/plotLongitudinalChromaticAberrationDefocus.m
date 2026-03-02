@@ -52,7 +52,7 @@ function generateFigure(examinedWavelengths, theTreeShrewLCAdefocusDiopters, the
     set(ax, 'XLim', xLims, 'XTick', xTicks, 'XTickLabel', {'400', '', '500', '', '600', '', '700', '', '800'});
     set(ax, 'YLim', yLims, 'YTick', yTicks);
     xlabel(ax, 'wavelength (nm)');
-    ylabel(ax, 'transmittance');
+    ylabel(ax, 'defocus (diopters)');
     title(ax, plotTitle);
 
     PublicationReadyPlotLib.applyFormat(ax,ff);

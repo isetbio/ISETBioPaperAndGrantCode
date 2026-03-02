@@ -11,18 +11,20 @@ function plotTrewShrewOptics()
             'name', 'wvf-based optics');
 
     % Retrieve the PSF and the MTF slices for a target wavelength
-    theTargetWavelength = 550;
+    theTargetWavelength = 650;
+    visualizedPSFrangeMicrons = 80;
+
     [thePSFdataStruct, theMTFdataStruct] = retrievePSFandMTF(theOI, theTargetWavelength);
 
     % Plot the PSF
-    pdfFileName = sprintf('PSF_TreeShrewSubject%d.pdf', theTreeShrewSubjectIndex);
-    plotTitle = sprintf('PSF (tree shrew subject %d)', theTreeShrewSubjectIndex);
-    generatePSFfigure(thePSFdataStruct, pdfFileName, plotTitle);
+    pdfFileName = sprintf('PSF_TreeShrewSubject%d_%dnm.pdf', theTreeShrewSubjectIndex, theTargetWavelength);
+    plotTitle = sprintf('PSF @ %dnm (tree shrew subject %d)', theTargetWavelength,  theTreeShrewSubjectIndex);
+    generatePSFfigure(thePSFdataStruct, visualizedPSFrangeMicrons, pdfFileName, plotTitle);
 
 
     % Plot the MTF
-    pdfFileName = sprintf('MTF_TreeShrewSubject%d.pdf', theTreeShrewSubjectIndex);
-    plotTitle = sprintf('MTF (tree shrew subject %d)', theTreeShrewSubjectIndex);
+    pdfFileName = sprintf('MTF_TreeShrewSubject%d_%dnm.pdf', theTreeShrewSubjectIndex, theTargetWavelength);
+    plotTitle = sprintf('MTF @ %dnm (tree shrew subject %d)', theTargetWavelength,  theTreeShrewSubjectIndex);
     generateMTFfigure(theMTFdataStruct, pdfFileName, plotTitle);
 
 
@@ -53,18 +55,17 @@ function plotTrewShrewOptics()
 
 
     % Retrieve the PSF and the MTF slices for a target wavelength
-    theTargetWavelength = 550;
     [thePSFdataStruct, theMTFdataStruct] = retrievePSFandMTF(theOI, theTargetWavelength);
 
     % Plot the PSF
-    pdfFileName = sprintf('PSF_HumanSubject%s.pdf', sprintf('%s_subj%d',opticsZernikeCoefficientsDataBase, testSubjectID));
-    plotTitle = sprintf('PSF (human subject %s-%d)', opticsZernikeCoefficientsDataBase, theTreeShrewSubjectIndex);
-    generatePSFfigure(thePSFdataStruct, pdfFileName, plotTitle);
+    pdfFileName = sprintf('PSF_HumanSubject%s_%dnm.pdf', sprintf('%s_subj%d',opticsZernikeCoefficientsDataBase, testSubjectID), theTargetWavelength);
+    plotTitle = sprintf('PSF @ %dnm (human subject %s-%d)', theTargetWavelength, opticsZernikeCoefficientsDataBase, theTreeShrewSubjectIndex);
+    generatePSFfigure(thePSFdataStruct, visualizedPSFrangeMicrons, pdfFileName, plotTitle);
 
 
     % Plot the MTF
-    pdfFileName = sprintf('MTF_HumanSubject%s.pdf', sprintf('%s_subj%d',opticsZernikeCoefficientsDataBase, testSubjectID));
-    plotTitle = sprintf('MTF (human subject %s-%d)', opticsZernikeCoefficientsDataBase, theTreeShrewSubjectIndex);
+    pdfFileName = sprintf('MTF_HumanSubject%s_%dnm.pdf', sprintf('%s_subj%d',opticsZernikeCoefficientsDataBase, testSubjectID), theTargetWavelength);
+    plotTitle = sprintf('MTF @ %dnm (human subject %s-%d)', theTargetWavelength, opticsZernikeCoefficientsDataBase, theTreeShrewSubjectIndex);
     generateMTFfigure(theMTFdataStruct, pdfFileName, plotTitle);
 
     
@@ -118,14 +119,13 @@ function visualizeMTFslice(ax, theMTFdataStruct, visualizedSFcyclesPerDegree, pl
 end
 
 
-function generatePSFfigure(thePSFdataStruct, pdfFileName, plotTitle)
+function generatePSFfigure(thePSFdataStruct,  visualizedPSFrangeMicrons, pdfFileName, plotTitle)
 
     ff = PublicationReadyPlotLib.figureComponents('1x1 standard tall figure');
 	hFig = figure(1); clf;
     theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
     ax = theAxes{1,1};
 
-    visualizedPSFrangeMicrons = 40;
     visualizePSF(ax, thePSFdataStruct, visualizedPSFrangeMicrons, plotTitle);
 
     PublicationReadyPlotLib.applyFormat(ax,ff);
