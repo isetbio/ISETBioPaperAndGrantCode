@@ -1,10 +1,11 @@
 function plotPreretinalPigmentTransmittances()
-% Plot the pre-retinal pigment transmittances of the treeshrew and of the
-% human retina
+% Plots the pre-retinal pigment transmittances of the treeshrew and of the
+% human retina. 
 %
 % Description:
-%   Plot the pre-retinal pigment transmittances of the treeshrew and of the
-%   human retina. 
+%   Plots the pre-retinal pigment transmittances of the treeshrew and of the
+%   human retina. The lens absorbance spectra is digitized from Figure 5 of 
+%   Petry and Harosi (1990) - Visual Pigments of the Tree Shrew, Vision Res., 30 (6).
 
 % History:
 %    03/01/26  NPC  Wrote it.

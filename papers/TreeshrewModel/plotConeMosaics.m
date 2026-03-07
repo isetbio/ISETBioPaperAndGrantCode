@@ -1,23 +1,48 @@
-function plotConeMosaics()
+function plotConeMosaics(options)
+% Plot cone mosaics of the treeshrew and of the human retina
+%
+% Description:
+%   Plot cone mosaics of the treeshrew and of the human retina of the same
+%   size in microns
+
+% History:
+%    03/01/26  NPC  Wrote it.
+
+arguments
+
+    % Whether to plot the quantal efficiencies at the cornea or at the retina
+    options.mosaicSizeMicrons (1,1) double = 150;
+
+end % arguments
+
+    mosaicSizeMicrons = options.mosaicSizeMicrons;
+
+    % Retrieve the tree-shrew retinal magnification factor to compute
+    % the mosaic size in visual degrees
+    theOI = oiTreeShrewCreate();
+    treeShrewMosaicSizeDegs = mosaicSizeMicrons / theOI.optics.micronsPerDegree * [1 1];
+
+    % Compute the human mosaic size in degrees
+    humanMosaicSizeDegs = WatsonRGCModel.rhoMMsToDegs(1) * mosaicSizeMicrons/1e3 * [1 1];
 
     % Generate a treeshrew cone mosaic
-    treeShrewMosaicSizeDegs = [1.9 1.9];
     theTreeShrewConeMosaic = cMosaicTreeShrewCreate(...
         'sizeDegs', treeShrewMosaicSizeDegs);
-    plotConeMosaic(theTreeShrewConeMosaic, sprintf('tree shrew mosaic (%2.1f x %2.1f degs)', treeShrewMosaicSizeDegs(1), treeShrewMosaicSizeDegs(2)), 'treeShrewConeMosaic.pdf');
+    plotConeMosaic(theTreeShrewConeMosaic, mosaicSizeMicrons/5, sprintf('tree shrew mosaic (%2.1f x %2.1f degs)', treeShrewMosaicSizeDegs(1), treeShrewMosaicSizeDegs(2)), 'treeShrewConeMosaic.pdf');
 
     % Generate human cone mosaic
-    humanConeMosaicSizeDegs = [0.5 0.5];
     theHumanConeMosaic = cMosaic(...
         'whichEye', 'right eye', ...         
-        'sizeDegs', humanConeMosaicSizeDegs);
+        'sizeDegs', humanMosaicSizeDegs);
 
-    plotConeMosaic(theHumanConeMosaic, sprintf('human cone mosaic (%2.1f x %2.1f degs)', humanConeMosaicSizeDegs(1), humanConeMosaicSizeDegs(2)), 'humanConeMosaic.pdf');
+    % Plot them
+    plotConeMosaic(theHumanConeMosaic, mosaicSizeMicrons/5, sprintf('human cone mosaic (%2.1f x %2.1f degs)', humanMosaicSizeDegs(1), humanMosaicSizeDegs(2)), 'humanConeMosaic.pdf');
 
 end
 
 
-function plotConeMosaic(theConeMosaic, plotTitle, pdfFileName)
+function plotConeMosaic(theConeMosaic, tickSizeMicrons, plotTitle, pdfFileName)
+
 
     ff = PublicationReadyPlotLib.figureComponents('1x1 giant square mosaic');
 	hFig = figure(1); clf;
@@ -26,9 +51,13 @@ function plotConeMosaic(theConeMosaic, plotTitle, pdfFileName)
 
     domainUnits = 'microns';
     domainVisualizationTicks = struct(...
-            'x',  sign(theConeMosaic.eccentricityMicrons(1)) * round(abs(theConeMosaic.eccentricityMicrons(1))) + 30*(-2:2), ...
-            'y',  sign(theConeMosaic.eccentricityMicrons(2)) * round(abs(theConeMosaic.eccentricityMicrons(2))) + 30*(-2:2));
+            'x',  sign(theConeMosaic.eccentricityMicrons(1)) * round(abs(theConeMosaic.eccentricityMicrons(1))) + round(tickSizeMicrons)*(-2:2), ...
+            'y',  sign(theConeMosaic.eccentricityMicrons(2)) * round(abs(theConeMosaic.eccentricityMicrons(2))) + round(tickSizeMicrons)*(-2:2));
 
+    theConeMosaic.sizeMicrons
+
+    domainVisualizationLims(1:2) = theConeMosaic.eccentricityMicrons(1) + [-0.5 0.5] * max(theConeMosaic.sizeMicrons);
+    domainVisualizationLims(3:4) = theConeMosaic.eccentricityMicrons(2) + [-0.5 0.5] * max(theConeMosaic.sizeMicrons);
 
     activation = zeros(1,1,theConeMosaic.conesNum);
     activation(1,1,theConeMosaic.lConeIndices) = activation(1,1,theConeMosaic.lConeIndices) + 0.7;
@@ -38,6 +67,7 @@ function plotConeMosaic(theConeMosaic, plotTitle, pdfFileName)
             'axesHandle', ax, ...
             'domain', domainUnits, ...
             'domainVisualizationTicks', domainVisualizationTicks, ...
+            'domainVisualizationLimits', domainVisualizationLims, ...
             'visualizedConeAperture', 'lightcollectingarea4sigma', ... %'activation', activation, %'activationRange', [0 1], ...
             'activationcolormap', brewermap(256, '*greys'), ...
             'visualizedConeApertureThetaSamples', 32, ...

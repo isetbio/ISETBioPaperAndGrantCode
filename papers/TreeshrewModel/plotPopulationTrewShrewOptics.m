@@ -1,7 +1,25 @@
-function plotPopulationTrewShrewOptics()
+function plotPopulationTrewShrewOptics(options)
+% Plots the population MTFs of all treeshrew subjects
+%
+% Description:
+%   Plots the population MTFs of all treeshrew subjects
 
-    % Retrieve the PSF and the MTF slices for a target wavelength
-    theTargetWavelength = 550;
+% History:
+%    03/01/26  NPC  Wrote it.
+
+arguments
+
+    % The pupil size in mm
+    options.pupilSizeMM (1,1) double = 4;
+
+    % The wavelength for which to visualize the PSF
+    options.visualizedWavelength = 550;
+
+    % Whether to plot the quantal efficiencies at the cornea or at the retina
+    options.overlayCSFdata (1,1) logical = ~true;
+
+end % arguments
+
 
     % Select a tree-shrew subject
     for iTreeShrewSubject = 1:11
@@ -10,12 +28,11 @@ function plotPopulationTrewShrewOptics()
         % Generate optics for this subject
         theOI = oiTreeShrewCreate( ...
             'opticsType', 'wvf', ...
-            'pupilDiameterMM', 4.0, ...
+            'pupilDiameterMM', options.pupilSizeMM, ...
             'whichShrew', iTreeShrewSubject, ...
             'name', 'wvf-based optics');
 
-        [~, theMTFdataStruct] = ...
-            retrievePSFandMTF(theOI, theTargetWavelength);
+        [~, theMTFdataStruct] = retrievePSFandMTF(theOI, options.visualizedWavelength);
 
         % Get the slice through the center
         [~,idx] = max(theMTFdataStruct.data(:));
@@ -25,11 +42,11 @@ function plotPopulationTrewShrewOptics()
     end % iTreeShrewSubject
 
     % Plot the MTFs
-    generateMTFfigure(theMTFdataStruct.supportCyclesPerDeg, theSubjectMTFs, 'populationMTFs.pdf', '');
+    generateMTFfigure(theMTFdataStruct.supportCyclesPerDeg, theSubjectMTFs, options.overlayCSFdata, 'populationMTFs.pdf', '');
 
 end
 
-function generateMTFfigure(sfSupportCPF, theSubjectMTFs, pdfFileName, plotTitle)
+function generateMTFfigure(sfSupportCPF, theSubjectMTFs, overlayCSFdata, pdfFileName, plotTitle)
 
     visualizedSFcyclesPerDegree = 40;
 
@@ -37,8 +54,6 @@ function generateMTFfigure(sfSupportCPF, theSubjectMTFs, pdfFileName, plotTitle)
 	hFig = figure(1); clf;
     theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
     ax = theAxes{1,1};
-
-    yyaxis(ax, 'left');
 
     % Plot the individual treeshre MTFs
     for iSubject = 1:size(theSubjectMTFs,1)
@@ -61,31 +76,33 @@ function generateMTFfigure(sfSupportCPF, theSubjectMTFs, pdfFileName, plotTitle)
     ff.legendEdgeColor = [0.2 0.2 0.2];
     ff.legendLineWidth = 1.0;
 
+    yyaxis(ax, 'left');
     xlabel(ax, 'spatial frequency (c/deg)');
     ylabel(ax, 'treeshrew MTFs (ISETBio)');
     set(ax, 'XLim', [0 visualizedSFcyclesPerDegree], 'YLim', [0 1]);
     set(ax, 'XTick', 0:5:100, 'yTick', 0:0.2:1, 'XColor', [0 0 0], 'YColor', [0 0 0]);
     grid(ax, 'on')
-
-    % Load the CSFdata of Saidak
-    csfData = mtfTreeShrewFromPaper('SaidakEtAl_2019');
-    csfData = csfData{1};
-
-    % Now lets add on the right the CSF data of Saidak et al.
-    yyaxis(ax, 'right');
-    p3 = plot(csfData.sf, csfData.csf, 'o', ...
-        'LineWidth', 2, 'Color', 'c', ...
-        'MarkerFaceColor', 'c', 'MarkerEdgeColor', 'b', 'MarkerSize', 20);
-   
-    legend(ax, [p1 p2 p3], {'individual MTFs', 'population MTF', 'CSF'});
-
-    ylabel(ax, sprintf('treeshrew CSF\n(measured by SaidakEtAl)'));
-    
     title(ax, plotTitle);
-    set(ax, 'XLim', [0 visualizedSFcyclesPerDegree], 'YLim', [0 120]);
-    set(ax, 'XTick', 0:5:100, 'yTick', 0:20:200, 'XColor', [0.5 0.8 1], 'YColor', [0.5 0.8 1]);
-    grid(ax, 'on')
 
+    if (overlayCSFdata)
+        % Load the CSFdata of Saidak
+        csfData = mtfTreeShrewFromPaper('SaidakEtAl_2019');
+        csfData = csfData{1};
+    
+        % Now lets add on the right the CSF data of Saidak et al.
+        yyaxis(ax, 'right');
+        p3 = plot(csfData.sf, csfData.csf, 'o', ...
+            'LineWidth', 2, 'Color', 'c', ...
+            'MarkerFaceColor', 'c', 'MarkerEdgeColor', 'b', 'MarkerSize', 20);
+       
+        legend(ax, [p1 p2 p3], {'individual MTFs', 'population MTF'});
+    
+        ylabel(ax, sprintf('treeshrew CSF\n(measured by SaidakEtAl)'));
+   
+        set(ax, 'XLim', [0 visualizedSFcyclesPerDegree], 'YLim', [0 120]);
+        set(ax, 'XTick', 0:5:100, 'yTick', 0:20:200, 'XColor', [0.5 0.8 1], 'YColor', [0.5 0.8 1]);
+        grid(ax, 'on')
+    end
 
     PublicationReadyPlotLib.applyFormat(ax,ff);
     % PublicationReadyPlotLib.offsetAxes(ax, ff, xLims, yLims); 
