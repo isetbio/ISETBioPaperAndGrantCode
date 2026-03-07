@@ -1,17 +1,22 @@
-function plotConeQuantalEfficienties()
+function plotConeQuantalEfficienties(options)
 % Plot the cone quantal efficiencies of the treeshrew and of the human retina
 %
 % Description:
-%   Plot the pre-retinal pigment transmittances of the treeshrew and of the
-%   human retina. 
+%   Plot the cone quantal efficiencies of the treeshrew and of the human retina 
 
 % History:
 %    03/01/26  NPC  Wrote it.
 
+arguments
+
+    % Whether to plot the quantal efficiencies at the cornea or at the retina
+    options.efficienciesAtCornea (1,1) logical = ~true;
+
+end % arguments
 
     % Flag indicating whether to plot cone quantal efficiencies at the
-    % cornea or not
-    efficienciesAtCornea = ~true;
+    % cornea or at the retina
+    efficienciesAtCornea = options.efficienciesAtCornea;
 
     % Generate a treeshrew cone mosaic object to retrieve the macular pigment
     theTreeShrewConeMosaic = cMosaicTreeShrewCreate(...
@@ -21,7 +26,6 @@ function plotConeQuantalEfficienties()
     theTreeShrewLens = lensTreeShrewCreate(...
         'wave', theTreeShrewConeMosaic.wave);
 
-    
     if (efficienciesAtCornea)
         % Add the spectral filtering due to the lens wavelength-dependent
         % transmittance. The macular pigment is already included  intheConeMosaic.qe
@@ -45,11 +49,6 @@ function plotConeQuantalEfficienties()
     theHumanConeMosaic = cMosaic(...
         'sizeDegs', [1 1]);
 
-    % Generate a treeshrew lens object
-    theHumanLens = Lens(...
-        'wave', theHumanConeMosaic.wave);
-
-    
     if (efficienciesAtCornea)
         % Add the spectral filtering due to the lens wavelength-dependent
         % transmittance. The macular pigment is already included  intheConeMosaic.qe
@@ -67,13 +66,10 @@ function plotConeQuantalEfficienties()
 
     % Plot the quantal efficiencies and save the plot in a pdf file
     generateFigure(theHumanConeMosaic.wave, quantalEfficiencies,  pdfFileName, plotTitle);
-
-
 end
 
 
 function generateFigure(wavelengthSupport, quantalEfficiencies,  pdfFileName, plotTitle)
-
 
     ff = PublicationReadyPlotLib.figureComponents('1x1 standard tall figure');
 	hFig = figure(1); clf;

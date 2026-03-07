@@ -20,4 +20,8 @@
 % - plotPopulationTrewShrewOptics
 %       Plots the population MTFs of all treeshrew subjects
 %
+% - plotConeMosaicsWithPSFs
+%       Combo plotting of cone mosaics & PSF of the treeshrew and of the human retina 
 %
+% - plotLongitudinalChromaticAberrationDefocus
+%       Plots the LCA the treeshrew and of the human retina

@@ -1,4 +1,8 @@
 function plotLongitudinalChromaticAberrationDefocus()
+% Plots the LCA the treeshrew and of the human retina
+%
+% Description:
+%   Plots the LCA the treeshrew and of the human retina
 
     % Generate a treeshrew cone mosaic object to retrieve the wavelengthsupport
     theTreeShrewConeMosaic = cMosaicTreeShrewCreate(...
