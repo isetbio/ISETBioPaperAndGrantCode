@@ -25,3 +25,6 @@
 %
 % - plotLongitudinalChromaticAberrationDefocus
 %       Plots the LCA the treeshrew and of the human retina
+%
+% - exampleComputation
+%       Compute the response of a tree shrew cone mosaic to a grating
