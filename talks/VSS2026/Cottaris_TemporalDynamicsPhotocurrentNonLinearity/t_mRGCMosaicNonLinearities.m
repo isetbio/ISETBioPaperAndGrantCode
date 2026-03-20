@@ -6,7 +6,26 @@ function t_mRGCMosaicNonLinearities(options)
 % Examples:
 %{
 
-% UTTBSkip
+% CHECK on MARCH 20,2026
+% Input cone mosaic (excitations+photocurrents) for condition specified
+% here, .e.g.
+%    backgroundLuminanceCdM2 = 200;
+%    chromaticity = 'Achromatic';
+%    contrast = 0.5;
+%    temporalFrequencyHz = 0.2;
+%    orientationsDegs = 0;
+%    spatialFrequencyCPD = 3.0;
+%
+% were found. Went through mRGC mosaic computation (with found input cone
+% mosaic responses) and without passing
+%   coneExcitationsBasedNonLinearityParamsStruct
+%   photocurrentsBasedNonLinearityParamsStruct
+% so linear response. The computed mRGC responses were saved in dropbox, under 
+% ONcenterMidgetRGCmosaics/nonLinearityDemos/...
+%    mRGCResponses_Achromatic@100_200Cd_0Deg_3.0CpD_\ 4Hz_MRGCMosaic_RE_Ecc2.0_0.0_Size0.5x0.5_Phi_1.00_Optics_Polans2015-2_maxStrehlRatio_srndModel_PackerDacey2002H1freeLowH1paramsNarrowVisualSTFparamTolerance_vSTF_1.0_1.0_Ecc_2.0_0.0_Size_0.5_0.5.mat 
+% and
+%    mRGCResponses_noSatNL_Achromatic@50_200Cd_0Deg_3.0CpD_\ 0Hz_MRGCMosaic_RE_Ecc2.0_0.0_Size0.5x0.5_Phi_1.00_Optics_Polans2015-2_maxStrehlRatio_srndModel_PackerDacey2002H1freeLowH1paramsNarrowVisualSTFparamTolerance_vSTF_1.0_1.0_Ecc_2.0_0.0_Size_0.5_0.5.mat
+%
 
 %
 % NOTE: To run any RGC-related ISETBio code, such as this tutorial, users must follow
