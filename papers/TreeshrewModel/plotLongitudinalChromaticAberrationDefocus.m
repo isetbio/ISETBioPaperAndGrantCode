@@ -22,7 +22,7 @@ end
 
 function generateFigure(examinedWavelengths, theTreeShrewLCAdefocusDiopters, theHumanLCAdefocusDiopters, pdfFileName, plotTitle)
 
-    ff = PublicationReadyPlotLib.figureComponents('1x1 standard tall figure');
+    ff = PublicationReadyPlotLib.figureComponents('1x1 standard figure');
 	hFig = figure(1); clf;
     
     theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
@@ -69,5 +69,6 @@ function generateFigure(examinedWavelengths, theTreeShrewLCAdefocusDiopters, the
 
     thePDFfileName = fullfile(theFiguresDir, pdfFileName);
     NicePlot.exportFigToPDF(thePDFfileName,hFig,  300);
+    NicePlot.exportFigToPNG(strrep(thePDFfileName, 'pdf', 'png'),hFig,  300);
 
 end

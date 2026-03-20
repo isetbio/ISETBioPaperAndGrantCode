@@ -13,7 +13,7 @@ arguments
     options.theTreeShrewSubjectIndex (1,1) double = 1;
 
     % The human subject rank order. Between 1 and 10
-    options.theHumanSubjectRankOrder (1,1) double = 5;
+    options.theHumanSubjectRankOrder (1,1) double = 4;
 
     % The pupil size in mm
     options.pupilSizeMM (1,1) double = 4;
@@ -109,6 +109,7 @@ function generateMTFfigure(theMTFdataStruct, pdfFileName, plotTitle)
 
     thePDFfileName = fullfile(theFiguresDir, pdfFileName);
     NicePlot.exportFigToPDF(thePDFfileName,hFig,  300);
+    NicePlot.exportFigToPNG(strrep(thePDFfileName, 'pdf', 'png'),hFig,  300);
 end
 
 
@@ -126,9 +127,9 @@ function visualizeMTFslice(ax, theMTFdataStruct, visualizedSFcyclesPerDegree, pl
 
     xlabel(ax, 'spatial frequency (c/deg)');
     ylabel(ax, 'MTF');
-    title(ax, plotTitle);
+    %title(ax, plotTitle);
     set(ax, 'XLim', [0 visualizedSFcyclesPerDegree], 'YLim', [0 1]);
-    set(ax, 'XTick', 0:10:100, 'yTick', 0:0.2:1);
+    set(ax, 'XTick', 0:10:200, 'yTick', 0:0.2:1);
     grid(ax, 'on')
 
 end
@@ -153,6 +154,7 @@ function generatePSFfigure(thePSFdataStruct,  visualizedPSFrangeMicrons, pdfFile
 
     thePDFfileName = fullfile(theFiguresDir, pdfFileName);
     NicePlot.exportFigToPDF(thePDFfileName,hFig,  300);
+    NicePlot.exportFigToPNG(strrep(thePDFfileName, 'pdf', 'png'),hFig,  300);
 
 end
 
@@ -167,7 +169,7 @@ function visualizePSF(ax, thePSFdataStruct, visualizedPSFrangeMicrons, plotTitle
     ylabel(ax, 'space, y (microns)');
     
     grid(ax, 'on');
-    title(ax, plotTitle);
+    %title(ax, plotTitle);
     colormap(ax, 1-gray(1024));
     drawnow;
 end

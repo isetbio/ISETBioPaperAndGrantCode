@@ -40,9 +40,6 @@ end % arguments
             'name', 'wvf-based optics');
 
     % Retrieve the PSF and the MTF slices for a target wavelength
-    theTargetWavelength = 550;
-    visualizedPSFrangeMicrons = 80;
-
     theTreeShrewPSFdataStruct = retrievePSFandMTF(theOI, options.visualizedWavelength);
     plotConeMosaicWithPSF(theTreeShrewConeMosaic,theTreeShrewPSFdataStruct, sprintf('tree shrew mosaic'), 'treeShrewConeMosaicAndPSF.pdf');
 
@@ -130,7 +127,7 @@ function plotConeMosaicWithPSF(theConeMosaic, thePSFdataStruct, plotTitle, pdfFi
 
     thePDFfileName = fullfile(theFiguresDir, pdfFileName);
     NicePlot.exportFigToPDF(thePDFfileName,hFig,  300);
-
+    NicePlot.exportFigToPNG(strrep(thePDFfileName, 'pdf', 'png'),hFig,  300);
 end
 
 
