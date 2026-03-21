@@ -7,21 +7,23 @@ function t_contastConeExcitationVsPhotocurrentSTFs(options)
 % Examples:
 %{
 
-
     % ---- Example 1 ----
 
     % Key params: (1) temporal frequency
     stimulusTFHz = 2.0;
 
     % Key params: (2) mean luminance
-    meanLuminanceCdM2 = 100;
-
+    examinedLuminancesCdM2  = [10 30 60 100 200 300];
+    
     % Key params: (3) contrast
-    stimContrast = 0.5;
+    examinedContrastLevels = [0.1 0.2 0.5 0.75 1.0];
 
-    sfSupport = logspace(log10(0.1), log10(20), 8);
-
+    % Chromaticity
     stimChromaticity = 'Achromatic';
+
+    % SF support
+    sfSupport = logspace(log10(0.1), log10(20), 16);
+
     
     % For Lee et al:
     %stimContrast('Achromatic') = 0.60;
@@ -29,63 +31,80 @@ function t_contastConeExcitationVsPhotocurrentSTFs(options)
     %stimContrast('MconeIsolating') = 0.33;   % MAX ACHIEVABLE M-cone isolating ON 'CRT-Sony-HorwitzLab', which is a SONY CRT, like Lee et al
 
     
+    % Choose the increment in the spatial phase of the drifting gratings
+    based on the temporal frequency and the CRT refresh rate
 
     CRTrefreshHz = 150;    
     % Optimal for the 150 Hz CRT of Lee&Shapley 2012. Their 2.5 Hz stimulus would correspond to 6 degs.
     spatialPhaseIncrementDegsOptimal = 360 / (CRTrefreshHz / stimulusTFHz)
     spatialPhaseIncrementDegs = 12
     
-
     framesNumPerPeriod = 360/ spatialPhaseIncrementDegs;
     frameDurationSeconds = (1/stimulusTFHz)/framesNumPerPeriod;
+
+    % Photocurrent response temporal support (3 msec)
     pCurrentTemporalResolutionSeconds = 3.0/1000;
 
+    % Parameters of the biophysical outer segment model for photocurrent
     photocurrentParams = struct(...
         'osBiophysicalModelWarmUpTimeSeconds', 1, ...
         'osBiophysicalModelTemporalResolutionSeconds', 1.0000e-05, ...
         'temporalResolutionSeconds', pCurrentTemporalResolutionSeconds);
 
 
-    % Extra string to be added to the generated response filenames so as to encode
-    % stimulus TF, mean luminance and contrast, 
-    % which are the parameters we want to examine the effect on the computed STFs
-    
-    extraInfoEncodedInFileName = sprintf('%1.1fHz_%2.0fCDM2_%2.0f%%', stimulusTFHz, meanLuminanceCdM2, 100*stimContrast)
-
-
     % Actions to perform
     computeInputConeMosaicResponses = true;                             % computation stage 1
-    computeInputConeMosaicResponsesBasedOnConeExcitations = ~true;       % computation sub-stage 1A: compute the cone excitations
-    computeInputConeMosaicResponsesBasedOnPhotocurrents = ~true;         % computation sub-stage 1B: compute the photocurrents
+    computeInputConeMosaicResponsesBasedOnConeExcitations = true;       % computation sub-stage 1A: compute the cone excitations
+    computeInputConeMosaicResponsesBasedOnPhotocurrents = true;         % computation sub-stage 1B: compute the photocurrents
     
     visualizeMosaicResponses = ~true;                                   % set this to true to visualize the dynamic cone mosaic response during step 1A
-    onlyInspectInputConeMosaicResponses = ~true;                         % computation sub-stage 1C: visualize exemplar cone excitation & photocurrent responses
+    onlyInspectInputConeMosaicResponses = ~true;                        % computation sub-stage 1C: visualize exemplar cone excitation & photocurrent responses
     
     computeMRGCMosaicResponses = ~true;                                 % computation stage 2:  compute the mRGC responses
     visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses = ~true;
    
-    analyzeSTFresponsesForTargetCells = ~true;                          % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
-    visualizeConeExcitationVsPhotocurrentSTFs = true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
+    analyzeSTFresponsesForTargetCells = ~true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
+    visualizeConeExcitationVsPhotocurrentSTFs = ~true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
 
-    t_contastConeExcitationVsPhotocurrentSTFs(...
-        'STFtemporalFrequencyHz', stimulusTFHz, ...
-        'STFmeanLuminanceCdM2', meanLuminanceCdM2, ...
-        'STFchromaticity', stimChromaticity, ...
-        'STFcontrast', stimContrast, ...
-        'STFsfSupport', sfSupport, ...
-        'spatialPhaseIncrementDegs', spatialPhaseIncrementDegs, ...
-        'photocurrentParams', photocurrentParams, ...
-        'extraInfoEncodedInFileName', extraInfoEncodedInFileName, ...
-        'computeInputConeMosaicResponses', computeInputConeMosaicResponses, ...
-        'computeInputConeMosaicResponsesBasedOnConeExcitations',computeInputConeMosaicResponsesBasedOnConeExcitations, ...
-        'computeInputConeMosaicResponsesBasedOnPhotocurrents', computeInputConeMosaicResponsesBasedOnPhotocurrents, ...
-        'visualizeMosaicResponses', visualizeMosaicResponses, ...      
-        'onlyInspectInputConeMosaicResponses', onlyInspectInputConeMosaicResponses, ...
-        'computeMRGCMosaicResponses', computeMRGCMosaicResponses, ...  
-        'visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses', visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses, ...
-        'analyzeSTFresponsesForTargetCells', analyzeSTFresponsesForTargetCells, ...
-        'visualizeConeExcitationVsPhotocurrentSTFs', visualizeConeExcitationVsPhotocurrentSTFs ...
-    );
+
+    for iLum = 1:numel(examinedLuminancesCdM2)
+    for iContrast = 1:numel(examinedContrastLevels)
+
+        meanLuminanceCdM2 = examinedLuminancesCdM2(iLum);
+        stimContrast = examinedContrastLevels(iContrast);
+
+        % Extra string to be added to the generated response filenames so as to encode
+        % stimulus TF, mean luminance and contrast, 
+        % which are the parameters we want to examine the effect on the computed STFs
+
+        extraInfoEncodedInFileName = ...
+            sprintf('%1.1fHz_%2.0fCDM2_%2.0f%%',stimulusTFHz, meanLuminanceCdM2, 100*stimContrast);
+
+        % Do it.
+        t_contastConeExcitationVsPhotocurrentSTFs(...
+            'STFtemporalFrequencyHz', stimulusTFHz, ...
+            'STFmeanLuminanceCdM2', meanLuminanceCdM2, ...
+            'STFchromaticity', stimChromaticity, ...
+            'STFcontrast', stimContrast, ...
+            'STFsfSupport', sfSupport, ...
+            'spatialPhaseIncrementDegs', spatialPhaseIncrementDegs, ...
+            'photocurrentParams', photocurrentParams, ...
+            'extraInfoEncodedInFileName', extraInfoEncodedInFileName, ...
+            'computeInputConeMosaicResponses', computeInputConeMosaicResponses, ...
+            'computeInputConeMosaicResponsesBasedOnConeExcitations',computeInputConeMosaicResponsesBasedOnConeExcitations, ...
+            'computeInputConeMosaicResponsesBasedOnPhotocurrents', computeInputConeMosaicResponsesBasedOnPhotocurrents, ...
+            'visualizeMosaicResponses', visualizeMosaicResponses, ...      
+            'onlyInspectInputConeMosaicResponses', onlyInspectInputConeMosaicResponses, ...
+            'computeMRGCMosaicResponses', computeMRGCMosaicResponses, ...  
+            'visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses', visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses, ...
+            'analyzeSTFresponsesForTargetCells', analyzeSTFresponsesForTargetCells, ...
+            'visualizeConeExcitationVsPhotocurrentSTFs', visualizeConeExcitationVsPhotocurrentSTFs ...
+        );
+    end  %  iContrast 
+    end  %  iLum
+
+
+
 
     % ----- Example 2 ----
     cropParams =  struct(...
