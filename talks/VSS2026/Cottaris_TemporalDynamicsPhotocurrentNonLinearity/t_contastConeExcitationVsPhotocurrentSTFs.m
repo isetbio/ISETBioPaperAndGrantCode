@@ -7,80 +7,11 @@ function t_contastConeExcitationVsPhotocurrentSTFs(options)
 % Examples:
 %{
 
-    % Key params: (1) temporal frequency
-    stimulus_TF_Hz = 2.5;
-
-    % Key params: (2) mean luminance
-    meanLuminanceCdM2 = 100;
-
-
-    CRT_refresh_Hz = 150;    
-    spatialPhaseIncrementDegsOptimal = 360 / (CRT_refresh_Hz / stimulus_TF_Hz)
-    spatialPhaseIncrementDegs = 12
-
-    framesNumPerPeriod = 360/ spatialPhaseIncrementDegs;
-    frameDurationSeconds = (1/stimulus_TF_Hz)/framesNumPerPeriod;
-    pCurrentTemporalResolutionSeconds = 3.0/1000;
-
-    photocurrentParams = struct(...
-        'osBiophysicalModelWarmUpTimeSeconds', 1, ...
-        'osBiophysicalModelTemporalResolutionSeconds', 1.0000e-05, ...
-        'temporalResolutionSeconds', pCurrentTemporalResolutionSeconds);
-
-    % Trying to match stated contrasts of Lee&Shapley, who claim 35% and 37% L/M cone contrasts, 60 for achromatic)
-    stimContrast = containers.Map();
-    stimContrast('Achromatic') = 0.60;
-    stimContrast('LconeIsolating') = 0.25;   % MAX ACHIEVABLE L-cone isolating ON 'CRT-Sony-HorwitzLab', which is a SONY CRT, like Lee et al
-    stimContrast('MconeIsolating') = 0.33;   % MAX ACHIEVABLE M-cone isolating ON 'CRT-Sony-HorwitzLab', which is a SONY CRT, like Lee et al
-
-    % Select which chromaticity to run
-    stimulusChroma = 'Achromatic';
-    %stimulusChroma = 'MconeIsolating';
-
-    extraInfoEncodedInFileName = sprintf('%1.1fHz_%2.0fCDM2_%2.0f%%', stimulus_TF_Hz, meanLuminanceCdM2, 100*stimContrast(stimulusChroma));
-
-    t_mRGCMosaicSTFcomputation(...
-        'rgcMosaicName', 'PLOSpaperNasal2DegsTinyMosaic', ...
-        'opticsSubjectName', 'PLOSpaperDefaultSubject', ...
-        'targetVisualSTFdescriptor', 'default', ...
-        'cropParams', struct(...
-            'eccentricityDegs', [2 0], ...
-            'sizeDegs', [0.5 0.5] ...
-        ), ...
-        'opticsForSTFresponses', struct(...
-            'type', 'refractionResidualWithRespectToNativeOptics',...
-            'refractiveErrorDiopters', 0.0 ...
-        ), ...
-        'STFchromaticity', stimulusChroma, ...
-        'STFcontrast', stimContrast(stimulusChroma), ...
-        'STForientationDeltaDegs', 90, ...                          % every 90 degs
-        'STFtemporalFrequencyHz', stimulus_TF_Hz, ...                          
-        'STFsfSupport', logspace(log10(0.1), log10(20), 8), ...    
-        'STFmeanLuminanceCdM2', meanLuminanceCdM2, ...              
-        'STFbackgroundXYchromaticity', [0.436, 0.476], ...          
-        'displayType', 'CRT-Sony-HorwitzLab', ...                   % SONY monitor like Lee & Shapley 2012
-        'displayLuminanceHeadroomPercentage', 200/100, ...          % Very large luminance headroom to generate these high cone contrasts
-        'spatialPhaseIncrementDegs', spatialPhaseIncrementDegs, ... % Optimal for the 150 Hz CRT of Lee&Shapley 2012. Their 2.5 Hz stimulus would correspond to 6 degs.
-        'coneFundamentalsOptimizedForStimPosition', true, ...
-        'photocurrentParams', photocurrentParams, ...
-        'extraInfoEncodedInFileName', extraInfoEncodedInFileName, ...  %
-        'computeInputConeMosaicResponses', true, ...                            % computation stage 1
-        'computeInputConeMosaicResponsesBasedOnConeExcitations', ~true, ...     % computation sub-stage 1A: compute the cone excitations
-        'computeInputConeMosaicResponsesBasedOnPhotocurrents',  true, ...       % computation sub-stage 1B: compute the photocurrents
-        'visualizeMosaicResponses', ~true, ...                                  % set this to true to visualize the dynamic cone mosaic response during step 1A
-        'inspectInputConeMosaicResponses', ~true, ...                           % computation sub-stage 1C: visualize exemplar cone excitation & photocurrent responses
-        'computeMRGCMosaicResponses', ~true, ...                                % computation stage 2:  compute the mRGC responses
-        'visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses', ~true, ...
-        'visualizeConeExcitationVsPhotocurrentSTFs', ~true, ...
-        'analyzeSTFresponsesForTargetCells', ~true ,...                         % compute the STFs
-        'contrastBPIsOfConeIsolatingVsAchromaticSTFs', ~true ...                % contrast the BPIs of coneIsolating vs achromatic STFs
-    );
-
 
     % ---- Example 1 ----
 
     % Key params: (1) temporal frequency
-    stimulusTFHz = 2.5;
+    stimulusTFHz = 2.0;
 
     % Key params: (2) mean luminance
     meanLuminanceCdM2 = 100;
@@ -119,13 +50,13 @@ function t_contastConeExcitationVsPhotocurrentSTFs(options)
     % stimulus TF, mean luminance and contrast, 
     % which are the parameters we want to examine the effect on the computed STFs
     
-    extraInfoEncodedInFileName = sprintf('%1.1fHz_%2.0fCDM2_%2.0f%%', stimulusTFHz, meanLuminanceCdM2, stimContrast);
+    extraInfoEncodedInFileName = sprintf('%1.1fHz_%2.0fCDM2_%2.0f%%', stimulusTFHz, meanLuminanceCdM2, 100*stimContrast)
 
 
     % Actions to perform
     computeInputConeMosaicResponses = true;                             % computation stage 1
-    computeInputConeMosaicResponsesBasedOnConeExcitations =~true;       % computation sub-stage 1A: compute the cone excitations
-    computeInputConeMosaicResponsesBasedOnPhotocurrents = true;         % computation sub-stage 1B: compute the photocurrents
+    computeInputConeMosaicResponsesBasedOnConeExcitations = true;       % computation sub-stage 1A: compute the cone excitations
+    computeInputConeMosaicResponsesBasedOnPhotocurrents = ~true;         % computation sub-stage 1B: compute the photocurrents
     
     visualizeMosaicResponses = ~true;                                   % set this to true to visualize the dynamic cone mosaic response during step 1A
     inspectInputConeMosaicResponses = ~true;                            % computation sub-stage 1C: visualize exemplar cone excitation & photocurrent responses
