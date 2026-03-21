@@ -3,14 +3,10 @@ function t_examplesVSS2024talk(options)
 
 % History:
 %    08/28/25  NPC  Wrote it.
+%    03/20/26  NPC  Updated it.
 
 % Examples:
 %{
-
-% ETTBSkip
-
-% Skip running these examples during autovalidation because they require material
-% not included in the ISETBio repository.
 
 %
 % SYNTHESIS
@@ -80,10 +76,11 @@ function t_examplesVSS2024talk(options)
     stimContrast('LconeIsolating') = 0.25;   % MAX ACHIEVABLE L-cone isolating ON 'CRT-Sony-HorwitzLab', which is a SONY CRT, like Lee et al
     stimContrast('MconeIsolating') = 0.33;   % MAX ACHIEVABLE M-cone isolating ON 'CRT-Sony-HorwitzLab', which is a SONY CRT, like Lee et al
 
-    % Select which chromat to run
+    % Select which chromaticity to run
     stimulusChroma = 'Achromatic';
     %stimulusChroma = 'MconeIsolating';
 
+    % Photocurrent params
     photocurrentParams = struct(...
         'osBiophysicalModelWarmUpTimeSeconds',  1.0, ...
         'osBiophysicalModelTemporalResolutionSeconds',  1e-5, ...

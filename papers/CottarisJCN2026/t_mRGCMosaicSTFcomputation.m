@@ -132,6 +132,8 @@ arguments
     options.STFcontrast (1,1) double = 0.5;
     options.STForientationDeltaDegs (1,1) double = 30;
 
+    options.extraInfoEncodedInFileName (1,:) char = '';
+
     options.displayType (1,:) char = '';
     options.displayLuminanceHeadroomPercentage (1,1) double = 5/100;
     options.coneFundamentalsOptimizedForStimPosition (1,1) logical = false;
@@ -202,6 +204,8 @@ STFtemporalFrequencyHz = options.STFtemporalFrequencyHz;
 STFsfSupport = options.STFsfSupport;
 STForientationDeltaDegs = options.STForientationDeltaDegs;
 
+extraInfoEncodedInFileName = options.extraInfoEncodedInFileName;
+
 displayType = options.displayType;
 displayLuminanceHeadroomPercentage = options.displayLuminanceHeadroomPercentage;
 coneFundamentalsOptimizedForStimPosition = options.coneFundamentalsOptimizedForStimPosition;
@@ -257,7 +261,11 @@ postFix = sprintf('%s_%s_Ecc_%2.1f_%2.1f_Size_%2.1f_%2.1f', ...
     theMRGCmosaic.eccentricityDegs(2), ...
     theMRGCmosaic.sizeDegs(1), ...
     theMRGCmosaic.sizeDegs(2));
-   
+  
+if (~isempty(extraInfoEncodedInFileName))
+    postFix = sprintf('%s_%s', postFix, extraInfoEncodedInFileName);
+end
+
 % Directory where all STF data will go
 STFsubDir = 'LeeShapley';
 
@@ -294,6 +302,8 @@ customTemporalFrequencyAndContrast = struct(...
     'temporalFrequencyHz', STFtemporalFrequencyHz, ...
     'totalContrast', STFcontrast);
 
+
+
 % Determine the stimulus pixel resolution to be a fraction of the minimum cone aperture or cone spacing in the mosaic
 % here, half of the cone spacing
 theMetric = 'cone aperture';  % choose from {'cone aperture' or cone spacing'}
@@ -327,7 +337,7 @@ if (computeInputConeMosaicResponses || inspectInputConeMosaicResponses || comput
         inspectInputConeMosaicResponses = false;
     end
 
-    
+
     RGCMosaicAnalyzer.compute.mosaicSTFsForStimulusChromaticityAndOptics(...
         theMRGCmosaic, theOptics, ...
         STFmeanLuminanceCdM2, ...
