@@ -166,7 +166,7 @@ arguments
     options.computeInputConeMosaicResponsesBasedOnPhotocurrents (1,1) logical = true;
 
     % Whether to inspect the input cone mosaic STF responses
-    options.inspectInputConeMosaicResponses (1,1) logical = false;
+    options.onlyInspectInputConeMosaicResponses (1,1) logical = false;
 
     % Whether to compute the input cone mosaic STF responses
     options.computeMRGCMosaicResponses (1,1) logical = false;
@@ -231,7 +231,7 @@ visualizeConeExcitationVsPhotocurrentSTFs = options.visualizeConeExcitationVsPho
 computeInputConeMosaicResponses = options.computeInputConeMosaicResponses;
 computeInputConeMosaicResponsesBasedOnConeExcitations = options.computeInputConeMosaicResponsesBasedOnConeExcitations;
 computeInputConeMosaicResponsesBasedOnPhotocurrents = options.computeInputConeMosaicResponsesBasedOnPhotocurrents;
-inspectInputConeMosaicResponses = options.inspectInputConeMosaicResponses;
+onlyInspectInputConeMosaicResponses = options.onlyInspectInputConeMosaicResponses;
 computeMRGCMosaicResponses = options.computeMRGCMosaicResponses;
 analyzeSTFresponsesForTargetCells = options.analyzeSTFresponsesForTargetCells;
 contrastBPIsOfConeIsolatingVsAchromaticSTFs = options.contrastBPIsOfConeIsolatingVsAchromaticSTFs;
@@ -318,23 +318,23 @@ STFstimulusResolutionDegs = RGCMosaicConstructor.helper.simulateExperiment.stimu
             theMRGCmosaic, targetRGCindices, theFraction, theMetric);
 
 
-if (computeInputConeMosaicResponses || inspectInputConeMosaicResponses || computeMRGCMosaicResponses)
+
+
+if (computeInputConeMosaicResponses || onlyInspectInputConeMosaicResponses || computeMRGCMosaicResponses)
 
     % Do one at a time
-    if (computeInputConeMosaicResponses)
-        debugInputConeMosaicPcurrentResponse = inspectInputConeMosaicResponses;
-        inspectInputConeMosaicResponses = false;
+    if (computeInputConeMosaicResponses && ...
+       (computeInputConeMosaicResponsesBasedOnConeExcitations || ...
+       computeInputConeMosaicResponsesBasedOnPhotocurrents))
         computeMRGCMosaicResponses = false;
 
-    elseif (inspectInputConeMosaicResponses)
-        debugInputConeMosaicPcurrentResponse = false;
+    elseif (onlyInspectInputConeMosaicResponses)
         computeInputConeMosaicResponses = false;
-        computeMRGCMosaicResponses = false;
+        computeMRGCMosaicResponses = true;
 
     elseif (computeMRGCMosaicResponses)
-        debugInputConeMosaicPcurrentResponse = false;
         computeInputConeMosaicResponses = false;
-        inspectInputConeMosaicResponses = false;
+        onlyInspectInputConeMosaicResponses = false;
     end
 
 
@@ -354,19 +354,19 @@ if (computeInputConeMosaicResponses || inspectInputConeMosaicResponses || comput
         'customTemporalFrequencyAndContrast', customTemporalFrequencyAndContrast, ...
         'nonLinearitiesList', nonLinearitiesList, ...
         'photocurrentParams', photocurrentParams, ...
-        'debugInputConeMosaicPcurrentResponse', debugInputConeMosaicPcurrentResponse, ...
         'spatialPhaseIncrementDegs', spatialPhaseIncrementDegs, ...
         'orientationDeltaDegs', STForientationDeltaDegs, ...
         'visualizeStimulusSequence', visualizeStimulusSequence, ...
         'computeInputConeMosaicResponses', computeInputConeMosaicResponses, ...
         'computeInputConeMosaicResponsesBasedOnConeExcitations', computeInputConeMosaicResponsesBasedOnConeExcitations, ...
         'computeInputConeMosaicResponsesBasedOnPhotocurrents', computeInputConeMosaicResponsesBasedOnPhotocurrents, ...
-        'inspectInputConeMosaicResponses', inspectInputConeMosaicResponses, ...
+        'onlyInspectInputConeMosaicResponses', onlyInspectInputConeMosaicResponses, ...
+        'debugInputConeMosaicPcurrentResponse', onlyInspectInputConeMosaicResponses, ...
         'computeMRGCMosaicResponses', computeMRGCMosaicResponses);
 end
 
 
-if (analyzeSTFresponsesForTargetCells)
+if (analyzeSTFresponsesForTargetCells) || (visualizeConeExcitationVsPhotocurrentSTFs)
 
     % We will analyze cells with a center purity range of 1.0, i.e., all center cones are of the same type
     targetedCenterPurityRange = [1 1];      % e.g., [0.5 1.0]. If this is set to [], we will target RGCs with any center specificity
