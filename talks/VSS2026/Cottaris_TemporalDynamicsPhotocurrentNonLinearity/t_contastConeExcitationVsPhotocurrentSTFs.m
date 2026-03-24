@@ -9,20 +9,37 @@ function t_contastConeExcitationVsPhotocurrentSTFs(options)
 
     % ---- Example 1 ----
 
-    % Key params: (1) temporal frequency
-    stimulusTFHz = 2.0;
+    % Croner&Kaplan conditions: 4 Hz, 25% contrast, 40 cd/m2
+
+    % Key params: (1) temporal frequency  
+    evenlyDividedTemporalFrequenciesFor150HzRefreshRate = [...
+        1; ...
+        2; ...
+        3.947372; ...
+        7.5; ...
+        10.7143; ...
+        15; ...
+        18.75; ...
+        25; ...
+        37.5];
+
+    % The Croner&Kaplan temporal frequency
+    targetTemporalFrequencyHz = 4.0;
+    [~,idx] = min(abs(evenlyDividedTemporalFrequenciesFor150HzRefreshRate-targetTemporalFrequencyHz));
+    stimulusTFHz = evenlyDividedTemporalFrequenciesFor150HzRefreshRate(idx);
+
 
     % Key params: (2) mean luminance
-    examinedLuminancesCdM2  = [10 30 60 100 200 300];
+    examinedLuminancesCdM2  = [15  40  100  250];
     
     % Key params: (3) contrast
-    examinedContrastLevels = [0.1 0.2 0.5 0.75 1.0];
+    examinedContrastLevels = [0.15 0.25 0.5 0.75 1.0];
 
-    % Chromaticity
+    % Chromaticity: (4) chromaticity
     stimChromaticity = 'Achromatic';
 
     % SF support
-    sfSupport = logspace(log10(0.1), log10(20), 16);
+    sfSupport = [0.1 0.2 logspace(log10(0.4), log10(40), 12)];
 
     
     % For Lee et al:
@@ -32,18 +49,18 @@ function t_contastConeExcitationVsPhotocurrentSTFs(options)
 
     
     % Choose the increment in the spatial phase of the drifting gratings
-    based on the temporal frequency and the CRT refresh rate
+    %based on the temporal frequency and the CRT refresh rate
 
     CRTrefreshHz = 150;    
     % Optimal for the 150 Hz CRT of Lee&Shapley 2012. Their 2.5 Hz stimulus would correspond to 6 degs.
     spatialPhaseIncrementDegsOptimal = 360 / (CRTrefreshHz / stimulusTFHz)
-    spatialPhaseIncrementDegs = 12
+    spatialPhaseIncrementDegs = spatialPhaseIncrementDegsOptimal
     
     framesNumPerPeriod = 360/ spatialPhaseIncrementDegs;
     frameDurationSeconds = (1/stimulusTFHz)/framesNumPerPeriod;
 
-    % Photocurrent response temporal support (3 msec)
-    pCurrentTemporalResolutionSeconds = 3.0/1000;
+    % Photocurrent response temporal support (0.5 msec)
+    pCurrentTemporalResolutionSeconds = 0.5/1000;
 
     % Parameters of the biophysical outer segment model for photocurrent
     photocurrentParams = struct(...
@@ -65,7 +82,6 @@ function t_contastConeExcitationVsPhotocurrentSTFs(options)
    
     analyzeSTFresponsesForTargetCells = ~true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
     visualizeConeExcitationVsPhotocurrentSTFs = ~true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
-
 
     for iLum = 1:numel(examinedLuminancesCdM2)
     for iContrast = 1:numel(examinedContrastLevels)
@@ -245,7 +261,7 @@ t_mRGCMosaicSTFcomputation(...
     'STFcontrast', options.STFcontrast, ...
     'STForientationDeltaDegs', options.STForientationDeltaDegs, ...  
     'STFtemporalFrequencyHz', options.STFtemporalFrequencyHz, ...                          
-    'STFsfSupport', logspace(log10(0.1), log10(20), 8), ...    
+    'STFsfSupport', options.STFsfSupport, ...    
     'STFmeanLuminanceCdM2', options.STFmeanLuminanceCdM2, ...              
     'STFbackgroundXYchromaticity', options.STFbackgroundXYchromaticity, ...          
     'displayType', options.displayType, ...                   
