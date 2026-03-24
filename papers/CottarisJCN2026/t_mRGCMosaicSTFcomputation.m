@@ -180,6 +180,8 @@ arguments
     % Whether to close previously open figures
     options.closePreviouslyOpenFigures (1,1) logical = true;
 
+    % Directory where to save PDFs
+    options.exportPDFdirectory (1,:) char = '';
 end % arguments
 
 
@@ -236,6 +238,7 @@ computeMRGCMosaicResponses = options.computeMRGCMosaicResponses;
 analyzeSTFresponsesForTargetCells = options.analyzeSTFresponsesForTargetCells;
 contrastBPIsOfConeIsolatingVsAchromaticSTFs = options.contrastBPIsOfConeIsolatingVsAchromaticSTFs;
 
+exportPDFdirectory = options.exportPDFdirectory;
 
 % Load the mRGCmosaic specified by the passed parameters:
 %   coneMosaicSpecies, opticsSubjectName, rgcMosaicName, targetVisualSTFdescriptor
@@ -389,7 +392,8 @@ if (analyzeSTFresponsesForTargetCells) || (visualizeConeExcitationVsPhotocurrent
         targetedSurroundPurityRange, ...
         targetedRadialEccentricityRange, ...
         visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses, ...
-        visualizeConeExcitationVsPhotocurrentSTFs);
+        visualizeConeExcitationVsPhotocurrentSTFs, ...
+        'exportPDFdirectory', exportPDFdirectory);
 
 end
 

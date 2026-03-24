@@ -102,10 +102,8 @@ function generateMTFfigure(theMTFdataStruct, pdfFileName, plotTitle)
     PublicationReadyPlotLib.applyFormat(ax,ff);
     % PublicationReadyPlotLib.offsetAxes(ax, ff, xLims, yLims); 
 
-    theFiguresDir = fullfile(ISETBioPaperAndGrantCodeRootDirectory, 'local', mfilename);
-    if (~exist(theFiguresDir,'dir'))
-        mkdir(theFiguresDir);
-    end
+    % Generate figure dir if it does not exist
+    theFiguresDir = ISETBioPaperAndGrantCodeFigureDirForScript(mfilename);
 
     thePDFfileName = fullfile(theFiguresDir, pdfFileName);
     NicePlot.exportFigToPDF(thePDFfileName,hFig,  300);
@@ -147,10 +145,8 @@ function generatePSFfigure(thePSFdataStruct,  visualizedPSFrangeMicrons, pdfFile
     PublicationReadyPlotLib.applyFormat(ax,ff);
     % PublicationReadyPlotLib.offsetAxes(ax, ff, xLims, yLims);
 
-    theFiguresDir = fullfile(ISETBioPaperAndGrantCodeRootDirectory, 'local', mfilename);
-    if (~exist(theFiguresDir,'dir'))
-        mkdir(theFiguresDir);
-    end
+    % Generate figure dir if it does not exist
+    theFiguresDir = ISETBioPaperAndGrantCodeFigureDirForScript(mfilename);
 
     thePDFfileName = fullfile(theFiguresDir, pdfFileName);
     NicePlot.exportFigToPDF(thePDFfileName,hFig,  300);
