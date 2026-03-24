@@ -1,4 +1,4 @@
-function t_contastConeExcitationVsPhotocurrentSTFs(options)
+function t_contrastConeExcitationVsPhotocurrentSTFs(options)
 % Examples used to generate material for the VSS2026 talk
 
 % History:
@@ -70,9 +70,9 @@ function t_contastConeExcitationVsPhotocurrentSTFs(options)
 
 
     % Actions to perform
-    computeInputConeMosaicResponses = true;                             % computation stage 1
-    computeInputConeMosaicResponsesBasedOnConeExcitations = true;       % computation sub-stage 1A: compute the cone excitations
-    computeInputConeMosaicResponsesBasedOnPhotocurrents = true;         % computation sub-stage 1B: compute the photocurrents
+    computeInputConeMosaicResponses = ~true;                             % computation stage 1
+    computeInputConeMosaicResponsesBasedOnConeExcitations = ~true;       % computation sub-stage 1A: compute the cone excitations
+    computeInputConeMosaicResponsesBasedOnPhotocurrents = ~true;         % computation sub-stage 1B: compute the photocurrents
     
     visualizeMosaicResponses = ~true;                                   % set this to true to visualize the dynamic cone mosaic response during step 1A
     onlyInspectInputConeMosaicResponses = ~true;                        % computation sub-stage 1C: visualize exemplar cone excitation & photocurrent responses
@@ -80,8 +80,13 @@ function t_contastConeExcitationVsPhotocurrentSTFs(options)
     computeMRGCMosaicResponses = ~true;                                 % computation stage 2:  compute the mRGC responses
     visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses = ~true;
    
-    analyzeSTFresponsesForTargetCells = ~true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
-    visualizeConeExcitationVsPhotocurrentSTFs = ~true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
+    analyzeSTFresponsesForTargetCells = true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
+    visualizeConeExcitationVsPhotocurrentSTFs = true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
+
+
+
+    examinedLuminancesCdM2 = examinedLuminancesCdM2(1);
+    examinedContrastLevels = examinedContrastLevels(1);
 
     for iLum = 1:numel(examinedLuminancesCdM2)
     for iContrast = 1:numel(examinedContrastLevels)
@@ -97,7 +102,7 @@ function t_contastConeExcitationVsPhotocurrentSTFs(options)
             sprintf('%1.1fHz_%2.0fCDM2_%2.0f%%',stimulusTFHz, meanLuminanceCdM2, 100*stimContrast);
 
         % Do it.
-        t_contastConeExcitationVsPhotocurrentSTFs(...
+        t_contrastConeExcitationVsPhotocurrentSTFs(...
             'STFtemporalFrequencyHz', stimulusTFHz, ...
             'STFmeanLuminanceCdM2', meanLuminanceCdM2, ...
             'STFchromaticity', stimChromaticity, ...
@@ -114,8 +119,9 @@ function t_contastConeExcitationVsPhotocurrentSTFs(options)
             'computeMRGCMosaicResponses', computeMRGCMosaicResponses, ...  
             'visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses', visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses, ...
             'analyzeSTFresponsesForTargetCells', analyzeSTFresponsesForTargetCells, ...
-            'visualizeConeExcitationVsPhotocurrentSTFs', visualizeConeExcitationVsPhotocurrentSTFs ...
-        );
+            'visualizeConeExcitationVsPhotocurrentSTFs', visualizeConeExcitationVsPhotocurrentSTFs, ...
+            'exportPDFs', true);
+        
     end  %  iContrast 
     end  %  iLum
 
@@ -133,7 +139,7 @@ function t_contastConeExcitationVsPhotocurrentSTFs(options)
             'refractiveErrorDiopters', 0.20 ...
         );
 
-    t_contastConeExcitationVsPhotocurrentSTFs(...
+    t_contrastConeExcitationVsPhotocurrentSTFs(...
         'cropParams', cropParams, ...
         'opticsForSTFresponses, opticsForSTFresponses);
 %}
@@ -247,8 +253,17 @@ arguments
     
     % Whether to analyze the STF responses for select target mRGCs
     options.analyzeSTFresponsesForTargetCells(1,1) logical = false;
+
+    % Whether to export PDFs
+    options.exportPDFs (1,1) logical = false;
+
 end % arguments
    
+if (options.exportPDFs)
+    exportPDFdirectory = fullfile(ISETBioPaperAndGrantCodeRootDirectory, mfilename);
+else
+    exportPDFdirectory = '';
+end
 
 t_mRGCMosaicSTFcomputation(...
     'rgcMosaicName', options.rgcMosaicName, ...
@@ -276,7 +291,7 @@ t_mRGCMosaicSTFcomputation(...
     'visualizeMosaicResponses', options.visualizeMosaicResponses, ...                                  
     'onlyInspectInputConeMosaicResponses', options.onlyInspectInputConeMosaicResponses, ...                           
     'computeMRGCMosaicResponses', options.computeMRGCMosaicResponses, ...                       
-    'visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses', false, ...
+    'visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses', options.visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses, ...
     'visualizeConeExcitationVsPhotocurrentSTFs', options.visualizeConeExcitationVsPhotocurrentSTFs, ...
-    'analyzeSTFresponsesForTargetCells', options.analyzeSTFresponsesForTargetCells ...
-);
+    'analyzeSTFresponsesForTargetCells', options.analyzeSTFresponsesForTargetCells, ...
+    'exportPDFdirectory', exportPDFdirectory);
