@@ -85,8 +85,11 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
 
 
 
-    examinedLuminancesCdM2 = examinedLuminancesCdM2(1);
-    examinedContrastLevels = examinedContrastLevels(1);
+    %examinedLuminancesCdM2 = examinedLuminancesCdM2(1);
+    %examinedContrastLevels = examinedContrastLevels(1);
+
+    examinedLuminancesCdM2 = examinedLuminancesCdM2(3);
+    examinedContrastLevels = examinedContrastLevels(5);
 
     for iLum = 1:numel(examinedLuminancesCdM2)
     for iContrast = 1:numel(examinedContrastLevels)
@@ -120,7 +123,8 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
             'visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses', visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses, ...
             'analyzeSTFresponsesForTargetCells', analyzeSTFresponsesForTargetCells, ...
             'visualizeConeExcitationVsPhotocurrentSTFs', visualizeConeExcitationVsPhotocurrentSTFs, ...
-            'exportPDFs', true);
+            'exportPDFs', ~true, ...
+            'exportVideo', true);
         
     end  %  iContrast 
     end  %  iLum
@@ -257,12 +261,21 @@ arguments
     % Whether to export PDFs
     options.exportPDFs (1,1) logical = false;
 
+    % Whether to export video of analysis for all mRGCs
+    options.exportVideo (1,1) logical = false;
+
 end % arguments
    
 if (options.exportPDFs)
     exportPDFdirectory = fullfile(ISETBioPaperAndGrantCodeRootDirectory, mfilename);
 else
     exportPDFdirectory = '';
+end
+
+if (options.exportVideo)
+    exportVideoDirectory = fullfile(ISETBioPaperAndGrantCodeRootDirectory, mfilename);
+else
+    exportVideoDirectory = '';
 end
 
 t_mRGCMosaicSTFcomputation(...
@@ -294,4 +307,5 @@ t_mRGCMosaicSTFcomputation(...
     'visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses', options.visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses, ...
     'visualizeConeExcitationVsPhotocurrentSTFs', options.visualizeConeExcitationVsPhotocurrentSTFs, ...
     'analyzeSTFresponsesForTargetCells', options.analyzeSTFresponsesForTargetCells, ...
-    'exportPDFdirectory', exportPDFdirectory);
+    'exportPDFdirectory', exportPDFdirectory, ...
+    'exportVideoDirectory', exportVideoDirectory);
