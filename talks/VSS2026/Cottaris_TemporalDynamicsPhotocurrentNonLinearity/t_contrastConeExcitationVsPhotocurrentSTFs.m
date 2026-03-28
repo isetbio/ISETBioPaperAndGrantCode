@@ -70,18 +70,18 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
 
 
     % Actions to perform
-    computeInputConeMosaicResponses = ~true;                             % computation stage 1
+    computeInputConeMosaicResponses = true;                             % computation stage 1
     computeInputConeMosaicResponsesBasedOnConeExcitations = ~true;       % computation sub-stage 1A: compute the cone excitations
-    computeInputConeMosaicResponsesBasedOnPhotocurrents = ~true;         % computation sub-stage 1B: compute the photocurrents
+    computeInputConeMosaicResponsesBasedOnPhotocurrents = true;         % computation sub-stage 1B: compute the photocurrents
     
     visualizeMosaicResponses = ~true;                                   % set this to true to visualize the dynamic cone mosaic response during step 1A
     onlyInspectInputConeMosaicResponses = ~true;                        % computation sub-stage 1C: visualize exemplar cone excitation & photocurrent responses
     
-    computeMRGCMosaicResponses = ~true;                                 % computation stage 2:  compute the mRGC responses
+    computeMRGCMosaicResponses = true;                                 % computation stage 2:  compute the mRGC responses
     visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses = ~true;
    
-    analyzeSTFresponsesForTargetCells = true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
-    visualizeConeExcitationVsPhotocurrentSTFs = true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
+    analyzeSTFresponsesForTargetCells = ~true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
+    visualizeConeExcitationVsPhotocurrentSTFs = ~true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
 
 
 
@@ -89,7 +89,7 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
     %examinedContrastLevels = examinedContrastLevels(1);
 
     examinedLuminancesCdM2 = examinedLuminancesCdM2(3);
-    examinedContrastLevels = examinedContrastLevels(5);
+    examinedContrastLevels = examinedContrastLevels(2);
 
     for iLum = 1:numel(examinedLuminancesCdM2)
     for iContrast = 1:numel(examinedContrastLevels)

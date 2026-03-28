@@ -132,6 +132,9 @@ arguments
     options.STFcontrast (1,1) double = 0.5;
     options.STForientationDeltaDegs (1,1) double = 30;
 
+    options.allowNonZeroBaselineInSineWaveFitsToResponseTimeSeries (1,1) logical = true;
+
+
     options.extraInfoEncodedInFileName (1,:) char = '';
 
     options.displayType (1,:) char = '';
@@ -207,6 +210,9 @@ STFcontrast = options.STFcontrast;
 STFtemporalFrequencyHz = options.STFtemporalFrequencyHz;
 STFsfSupport = options.STFsfSupport;
 STForientationDeltaDegs = options.STForientationDeltaDegs;
+
+% Fitting response time series for STF estimation
+allowNonZeroBaselineInSineWaveFitsToResponseTimeSeries = options.allowNonZeroBaselineInSineWaveFitsToResponseTimeSeries;
 
 extraInfoEncodedInFileName = options.extraInfoEncodedInFileName;
 
@@ -375,6 +381,12 @@ if (computeInputConeMosaicResponses || onlyInspectInputConeMosaicResponses || co
         'onlyInspectInputConeMosaicResponses', onlyInspectInputConeMosaicResponses, ...
         'debugInputConeMosaicPcurrentResponse', onlyInspectInputConeMosaicResponses, ...
         'computeMRGCMosaicResponses', computeMRGCMosaicResponses);
+
+    if (computeMRGCMosaicResponses)
+        % Add the PSF that was used to compute the STFs
+        save(theMRGCMosaicSTFResponsesFullFileName, 'thePSFatTheMosaicEccentricity', '-append');
+    end
+
 end
 
 
@@ -402,6 +414,7 @@ if (analyzeSTFresponsesForTargetCells) || (visualizeConeExcitationVsPhotocurrent
         targetedRadialEccentricityRange, ...
         visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses, ...
         visualizeConeExcitationVsPhotocurrentSTFs, ...
+        'allowNonZeroBaselineInSineWaveFitsToResponseTimeSeries', allowNonZeroBaselineInSineWaveFitsToResponseTimeSeries, ...
         'exportPDFdirectory', exportPDFdirectory, ...
         'exportVideoDirectory', exportVideoDirectory);
 

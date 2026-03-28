@@ -161,7 +161,7 @@ targetedCenterPurityRange = [];
 
 
 [min(theCenterConeNumerosities) max(theCenterConeNumerosities)]
-[min(theMRGCMosaic.responseGains(targetRGCindices)) max(theMRGCMosaic.responseGains(targetRGCindices))]
+[min(theMRGCmosaic.responseGains(targetRGCindices)) max(theMRGCmosaic.responseGains(targetRGCindices))]
 
 
 end
