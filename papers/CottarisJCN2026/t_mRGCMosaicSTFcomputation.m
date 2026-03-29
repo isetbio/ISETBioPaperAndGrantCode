@@ -158,6 +158,7 @@ arguments
     options.visualizeMosaicResponses (1,1) logical = false;
     options.visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses (1,1) logical = false;
     options.visualizeConeExcitationVsPhotocurrentSTFs (1,1) logical = false;
+    options.visualizedRGCindices (1,:) double = [];
 
     % ---- Choices of actions to perform ----
     options.computeInputConeMosaicResponses (1,1) logical = false;
@@ -236,6 +237,7 @@ visualizeMosaicResponses = options.visualizeMosaicResponses;
 
 visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses = options.visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses;
 visualizeConeExcitationVsPhotocurrentSTFs = options.visualizeConeExcitationVsPhotocurrentSTFs;
+visualizedRGCindices = options.visualizedRGCindices;
 
 % Actions to perform
 computeInputConeMosaicResponses = options.computeInputConeMosaicResponses;
@@ -414,9 +416,10 @@ if (analyzeSTFresponsesForTargetCells) || (visualizeConeExcitationVsPhotocurrent
         targetedRadialEccentricityRange, ...
         visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses, ...
         visualizeConeExcitationVsPhotocurrentSTFs, ...
+        'visualizedRGCindices', visualizedRGCindices, ...
         'allowNonZeroBaselineInSineWaveFitsToResponseTimeSeries', allowNonZeroBaselineInSineWaveFitsToResponseTimeSeries, ...
         'exportPDFdirectory', exportPDFdirectory, ...
-        'exportVideoDirectory', exportVideoDirectory);
+        'exportVideoDirectory', exportVideoDirectory)
 
 end
 
