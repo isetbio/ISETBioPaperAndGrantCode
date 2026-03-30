@@ -24,7 +24,7 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
         37.5];
 
     % The Croner&Kaplan temporal frequency
-    targetTemporalFrequencyHz = 4.0;
+    targetTemporalFrequencyHz = 1.0;
     [~,idx] = min(abs(evenlyDividedTemporalFrequenciesFor150HzRefreshRate-targetTemporalFrequencyHz));
     stimulusTFHz = evenlyDividedTemporalFrequenciesFor150HzRefreshRate(idx);
 
@@ -64,14 +64,14 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
 
     % Parameters of the biophysical outer segment model for photocurrent
     photocurrentParams = struct(...
-        'osBiophysicalModelWarmUpTimeSeconds', 3, ...
+        'osBiophysicalModelWarmUpTimeSeconds', max([1.5 1.0+3*1/stimulusTFHz]), ...
         'osBiophysicalModelTemporalResolutionSeconds', 1.0000e-05, ...
         'temporalResolutionSeconds', pCurrentTemporalResolutionSeconds);
 
 
     % Actions to perform
     computeInputConeMosaicResponses = true;                             % computation stage 1
-    computeInputConeMosaicResponsesBasedOnConeExcitations = ~true;       % computation sub-stage 1A: compute the cone excitations
+    computeInputConeMosaicResponsesBasedOnConeExcitations = true;       % computation sub-stage 1A: compute the cone excitations
     computeInputConeMosaicResponsesBasedOnPhotocurrents = true;         % computation sub-stage 1B: compute the photocurrents
     
     visualizeMosaicResponses = ~true;                                   % set this to true to visualize the dynamic cone mosaic response during step 1A
@@ -88,8 +88,13 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
     %examinedLuminancesCdM2 = examinedLuminancesCdM2(1);
     %examinedContrastLevels = examinedContrastLevels(1);
 
+    % DOING THIS ON MAC_STUDIO WITH 5 second warmp up time
     examinedLuminancesCdM2 = examinedLuminancesCdM2(3);
     examinedContrastLevels = examinedContrastLevels(2);
+
+    % DOING THIS ON MACBOOK WITH SAVING OSmodels
+    examinedLuminancesCdM2 = examinedLuminancesCdM2(3);
+    examinedContrastLevels = examinedContrastLevels(3);
 
     for iLum = 1:numel(examinedLuminancesCdM2)
     for iContrast = 1:numel(examinedContrastLevels)
