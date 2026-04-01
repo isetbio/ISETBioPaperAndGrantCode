@@ -178,6 +178,23 @@ arguments
     % Whether to analyze the STF responses for select target mRGCs
     options.analyzeSTFresponsesForTargetCells(1,1) logical = false;
 
+    % Analyzed cells' target center purity range
+    % e.g., [0.5 1.0]. If this is set to [], we will target RGCs with any center specificity
+    options.targetedCenterPurityRange (1,:) double = [];  
+
+    % Analyzed cells' target center cone numerosity
+    % e.g., [1 2]. If set to [], we will target RGCs with any center numerosity
+    options.targetedCenterConeNumerosityRange (1,:) double = [];
+
+    % Analyzed cells' surround purity range
+    % e.g., [0.4 0.6] to checks cells with around 50/50 L/M cone net weight in their surrounds)
+    % set to [] for all surround purities
+    options.targetedSurroundPurityRange (1,:) double = [];     
+
+    % Analyzed cells' radial eccentricity range
+    % e.g., [4.9 5.5]; If set to empty we will examine all cells
+    options.targetedRadialEccentricityRange (1,:) double = [];
+
     % Whether to contrast the BPIs of the computed STF responses for select target mRGCs
     options.contrastBPIsOfConeIsolatingVsAchromaticSTFs (1,1) logical = false;
 
@@ -395,16 +412,16 @@ end
 if (analyzeSTFresponsesForTargetCells) || (visualizeConeExcitationVsPhotocurrentSTFs)
 
     % We will analyze cells with a center purity range of 1.0, i.e., all center cones are of the same type
-    targetedCenterPurityRange = [1 1];      % e.g., [0.5 1.0]. If this is set to [], we will target RGCs with any center specificity
+    targetedCenterPurityRange = options.targetedCenterPurityRange; 
 
     % Any center cone numerosity
-    targetedCenterConeNumerosityRange = []; % e.g., [1 2]. If set to [], we will target RGCs with any center numerosity
+    targetedCenterConeNumerosityRange = options.targetedCenterConeNumerosityRange;
 
     % Surround purity range
-    targetedSurroundPurityRange = [];       % e.g., [0.4 0.6] to checks cells with around 50/50 L/M cone net weight in their surrounds)
+    targetedSurroundPurityRange = options.targetedSurroundPurityRange; 
 
     % Radial eccentricity range
-    targetedRadialEccentricityRange = [];   % e.g., [4.9 5.5]; If set to empty we will examine all cells
+    targetedRadialEccentricityRange = options.targetedRadialEccentricityRange; 
 
 
     RGCMosaicAnalyzer.compute.mosaicSTFanalysisForTargetedCellPopulation(...

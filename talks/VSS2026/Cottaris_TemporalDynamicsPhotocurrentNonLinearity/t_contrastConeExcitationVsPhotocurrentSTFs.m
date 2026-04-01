@@ -24,16 +24,16 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
         37.5];
 
     % The Croner&Kaplan temporal frequency
-    targetTemporalFrequencyHz = 1.0;
+    targetTemporalFrequencyHz = 4.0;
     [~,idx] = min(abs(evenlyDividedTemporalFrequenciesFor150HzRefreshRate-targetTemporalFrequencyHz));
     stimulusTFHz = evenlyDividedTemporalFrequenciesFor150HzRefreshRate(idx);
 
 
     % Key params: (2) mean luminance
-    examinedLuminancesCdM2  = [15  40  100  250];
+    examinedLuminancesCdM2  = 100; % [15  40  100  250];
     
     % Key params: (3) contrast
-    examinedContrastLevels = [0.15 0.25 0.5 0.75 1.0];
+    examinedContrastLevels = 1.0; % [0.15 0.25 0.5 0.75 1.0];
 
     % Chromaticity: (4) chromaticity
     stimChromaticity = 'Achromatic';
@@ -70,31 +70,25 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
 
 
     % Actions to perform
-    computeInputConeMosaicResponses = true;                             % computation stage 1
-    computeInputConeMosaicResponsesBasedOnConeExcitations = true;       % computation sub-stage 1A: compute the cone excitations
-    computeInputConeMosaicResponsesBasedOnPhotocurrents = true;         % computation sub-stage 1B: compute the photocurrents
+    computeInputConeMosaicResponses = ~true;                             % computation stage 1
+    computeInputConeMosaicResponsesBasedOnConeExcitations = ~true;       % computation sub-stage 1A: compute the cone excitations
+    computeInputConeMosaicResponsesBasedOnPhotocurrents = ~true;         % computation sub-stage 1B: compute the photocurrents
+    visualizeMosaicResponses = ~true;                                    % set this to true to visualize the dynamic cone mosaic response during step 1A
+
     
-    visualizeMosaicResponses = ~true;                                   % set this to true to visualize the dynamic cone mosaic response during step 1A
-    onlyInspectInputConeMosaicResponses = ~true;                        % computation sub-stage 1C: visualize exemplar cone excitation & photocurrent responses
-    
-    computeMRGCMosaicResponses = ~true;                                 % computation stage 2:  compute the mRGC responses
-    visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses = ~true;
-   
+    computeMRGCMosaicResponses = ~true;                                   % computation stage 2:  compute the mRGC responses
+    onlyInspectInputConeMosaicResponses = ~true;                          % when this is true, and computeMRGCMosaicResponses , we visualize individual traces of cone excitation/photocurrents
+
+    visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses = ~true;   
     analyzeSTFresponsesForTargetCells = ~true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
-    visualizeConeExcitationVsPhotocurrentSTFs = ~true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
+    visualizeConeExcitationVsPhotocurrentSTFs = true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
 
 
 
-    %examinedLuminancesCdM2 = examinedLuminancesCdM2(1);
-    %examinedContrastLevels = examinedContrastLevels(1);
-
-    % DOING THIS ON MAC_STUDIO WITH 5 second warmp up time
     examinedLuminancesCdM2 = examinedLuminancesCdM2(3);
     examinedContrastLevels = examinedContrastLevels(2);
 
-    % DOING THIS ON MACBOOK WITH SAVING OSmodels
-    examinedLuminancesCdM2 = examinedLuminancesCdM2(3);
-    examinedContrastLevels = examinedContrastLevels(3);
+  
 
     for iLum = 1:numel(examinedLuminancesCdM2)
     for iContrast = 1:numel(examinedContrastLevels)
@@ -110,6 +104,9 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
             sprintf('%1.1fHz_%2.0fCDM2_%2.0f%%',stimulusTFHz, meanLuminanceCdM2, 100*stimContrast);
 
         % Do it.
+        visualizedRGCindices = nan;
+
+
         t_contrastConeExcitationVsPhotocurrentSTFs(...
             'STFtemporalFrequencyHz', stimulusTFHz, ...
             'STFmeanLuminanceCdM2', meanLuminanceCdM2, ...
@@ -128,7 +125,7 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
             'visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses', visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses, ...
             'analyzeSTFresponsesForTargetCells', analyzeSTFresponsesForTargetCells, ...
             'visualizeConeExcitationVsPhotocurrentSTFs', visualizeConeExcitationVsPhotocurrentSTFs, ...
-            'visualizedRGCindices', 332, ...
+            'visualizedRGCindices', visualizedRGCindices, ...
             'exportPDFdirectory', 'local', ...
             'exportVideoDirectory', 'local');
         
@@ -264,6 +261,24 @@ arguments
     % Whether to analyze the STF responses for select target mRGCs
     options.analyzeSTFresponsesForTargetCells(1,1) logical = false;
 
+    % Analyzed cells' target center purity range
+    % e.g. [1 1], for only 100% single cone type. 
+    % Set to [] for all center purities
+    options.targetedCenterPurityRange (1,:) double = [];   
+
+    % Analyzed cells' target center cone numerosity
+    % e.g., [1 2]. If set to [], we will target RGCs with any center numerosity
+    options.targetedCenterConeNumerosityRange (1,:) double = [];
+
+    % Analyzed cells' surround purity range
+    % e.g., [0.4 0.6] to checks cells with around 50/50 L/M cone net weight in their surrounds)
+    % set to [] for all surround purities
+    options.targetedSurroundPurityRange (1,:) double = [];      
+
+    % Analyzed cells' radial eccentricity range
+    % e.g., [4.9 5.5]; If set to empty we will examine all cells
+    options.targetedRadialEccentricityRange (1,:) double = [];
+
     % Which RGCs to visualize cone excitations vs photocurrent STFs
     options.visualizedRGCindices (1,:) double = [];
 
@@ -316,6 +331,10 @@ t_mRGCMosaicSTFcomputation(...
     'visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses', options.visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses, ...
     'visualizeConeExcitationVsPhotocurrentSTFs', options.visualizeConeExcitationVsPhotocurrentSTFs, ...
     'analyzeSTFresponsesForTargetCells', options.analyzeSTFresponsesForTargetCells, ...
+    'targetedCenterPurityRange', options.targetedCenterPurityRange, ...     
+    'targetedCenterConeNumerosityRange', options.targetedCenterConeNumerosityRange, ... 
+    'targetedSurroundPurityRange', options.targetedSurroundPurityRange, ...    
+    'targetedRadialEccentricityRange', options.targetedRadialEccentricityRange, ...
     'visualizedRGCindices', options.visualizedRGCindices , ...
     'exportPDFdirectory', exportPDFdirectory, ...
     'exportVideoDirectory', exportVideoDirectory);
