@@ -30,10 +30,10 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
 
 
     % Key params: (2) mean luminance
-    examinedLuminancesCdM2  = 100; % [15  40  100  250];
+    examinedLuminancesCdM2  = 40; % [15  40  100  250];
     
     % Key params: (3) contrast
-    examinedContrastLevels = 1.0; % [0.15 0.25 0.5 0.75 1.0];
+    examinedContrastLevels = 0.25; % [0.15 0.25 0.5 0.75 1.0];
 
     % Chromaticity: (4) chromaticity
     stimChromaticity = 'Achromatic';
@@ -69,6 +69,29 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
         'temporalResolutionSeconds', pCurrentTemporalResolutionSeconds);
 
 
+
+    visualizedRGCindices = nan; % all RGCs
+    visualizedRGCindices = [-156 -264 -282 -303];  % all but these RGCs
+    %visualizedRGCindices = 11;  % specific RGCs
+
+    % Analyzed cells' target center cone purity, [] for all
+    targetedCenterPurityRange = [] 
+
+    % Analyzed cells' target center cone numerosity
+    % e.g., [1 2]. If set to [], we will target RGCs with any center numerosity
+    targetedCenterConeNumerosityRange = []
+
+    % Analyzed cells' surround purity range
+    % e.g., [0.4 0.6] to checks cells with around 50/50 L/M cone net weight in their surrounds)
+    % set to [] for all surround purities
+    targetedSurroundPurityRange = [];     
+
+    % Analyzed cells' radial eccentricity range
+    % e.g., [4.9 5.5]; If set to empty we will examine all cells
+    targetedRadialEccentricityRange = [];
+
+
+
     % Actions to perform
     computeInputConeMosaicResponses = ~true;                             % computation stage 1
     computeInputConeMosaicResponsesBasedOnConeExcitations = ~true;       % computation sub-stage 1A: compute the cone excitations
@@ -80,16 +103,11 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
     onlyInspectInputConeMosaicResponses = ~true;                          % when this is true, and computeMRGCMosaicResponses , we visualize individual traces of cone excitation/photocurrents
 
     visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses = ~true;   
-    analyzeSTFresponsesForTargetCells = ~true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
+    analyzeSTFresponsesForTargetCells = true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
     visualizeConeExcitationVsPhotocurrentSTFs = true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
 
-
-
-    examinedLuminancesCdM2 = examinedLuminancesCdM2(3);
-    examinedContrastLevels = examinedContrastLevels(2);
-
+    
   
-
     for iLum = 1:numel(examinedLuminancesCdM2)
     for iContrast = 1:numel(examinedContrastLevels)
 
@@ -97,16 +115,10 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
         stimContrast = examinedContrastLevels(iContrast);
 
         % Extra string to be added to the generated response filenames so as to encode
-        % stimulus TF, mean luminance and contrast, 
-        % which are the parameters we want to examine the effect on the computed STFs
-
-        extraInfoEncodedInFileName = ...
-            sprintf('%1.1fHz_%2.0fCDM2_%2.0f%%',stimulusTFHz, meanLuminanceCdM2, 100*stimContrast);
+        % stimulus TF, mean luminance and contrast
+        extraInfoEncodedInFileName = sprintf('%1.1fHz_%2.0fCDM2_%2.0f%%',stimulusTFHz, meanLuminanceCdM2, 100*stimContrast);
 
         % Do it.
-        visualizedRGCindices = nan;
-
-
         t_contrastConeExcitationVsPhotocurrentSTFs(...
             'STFtemporalFrequencyHz', stimulusTFHz, ...
             'STFmeanLuminanceCdM2', meanLuminanceCdM2, ...
@@ -126,6 +138,10 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
             'analyzeSTFresponsesForTargetCells', analyzeSTFresponsesForTargetCells, ...
             'visualizeConeExcitationVsPhotocurrentSTFs', visualizeConeExcitationVsPhotocurrentSTFs, ...
             'visualizedRGCindices', visualizedRGCindices, ...
+            'targetedCenterPurityRange', targetedCenterPurityRange, ...
+            'targetedCenterConeNumerosityRange', targetedCenterConeNumerosityRange, ...
+            'targetedSurroundPurityRange', targetedSurroundPurityRange, ...
+            'targetedRadialEccentricityRange', targetedRadialEccentricityRange, ...
             'exportPDFdirectory', 'local', ...
             'exportVideoDirectory', 'local');
         
