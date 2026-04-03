@@ -175,6 +175,9 @@ arguments
     % Whether to compute the input cone mosaic STF responses
     options.computeMRGCMosaicResponses (1,1) logical = false;
     
+    % Whether the photocurrent-based mRGC responses operate on background-adapted photocurrents
+    options.mRGCsOperateOnBackgroundAdaptedPhotocurrents (1,1) logical = true;
+
     % Whether to analyze the STF responses for select target mRGCs
     options.analyzeSTFresponsesForTargetCells(1,1) logical = false;
 
@@ -262,6 +265,7 @@ computeInputConeMosaicResponsesBasedOnConeExcitations = options.computeInputCone
 computeInputConeMosaicResponsesBasedOnPhotocurrents = options.computeInputConeMosaicResponsesBasedOnPhotocurrents;
 onlyInspectInputConeMosaicResponses = options.onlyInspectInputConeMosaicResponses;
 computeMRGCMosaicResponses = options.computeMRGCMosaicResponses;
+mRGCsOperateOnBackgroundAdaptedPhotocurrents = options.mRGCsOperateOnBackgroundAdaptedPhotocurrents;
 analyzeSTFresponsesForTargetCells = options.analyzeSTFresponsesForTargetCells;
 contrastBPIsOfConeIsolatingVsAchromaticSTFs = options.contrastBPIsOfConeIsolatingVsAchromaticSTFs;
 
@@ -399,7 +403,8 @@ if (computeInputConeMosaicResponses || onlyInspectInputConeMosaicResponses || co
         'computeInputConeMosaicResponsesBasedOnPhotocurrents', computeInputConeMosaicResponsesBasedOnPhotocurrents, ...
         'onlyInspectInputConeMosaicResponses', onlyInspectInputConeMosaicResponses, ...
         'debugInputConeMosaicPcurrentResponse', onlyInspectInputConeMosaicResponses, ...
-        'computeMRGCMosaicResponses', computeMRGCMosaicResponses);
+        'computeMRGCMosaicResponses', computeMRGCMosaicResponses, ...
+        'mRGCsOperateOnBackgroundAdaptedPhotocurrents', mRGCsOperateOnBackgroundAdaptedPhotocurrents);
 
     if (computeMRGCMosaicResponses)
         % Add the PSF that was used to compute the STFs

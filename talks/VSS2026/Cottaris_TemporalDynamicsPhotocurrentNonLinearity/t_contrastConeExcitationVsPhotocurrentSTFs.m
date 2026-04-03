@@ -30,7 +30,7 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
 
 
     % Key params: (2) mean luminance
-    examinedLuminancesCdM2  = 40; % [15  40  100  250];
+    examinedLuminancesCdM2  = 100; % [15  40  100  250];
     
     % Key params: (3) contrast
     examinedContrastLevels = 0.25; % [0.15 0.25 0.5 0.75 1.0];
@@ -72,7 +72,7 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
 
     visualizedRGCindices = nan; % all RGCs
     visualizedRGCindices = [-156 -264 -282 -303];  % all but these RGCs
-    %visualizedRGCindices = 11;  % specific RGCs
+    visualizedRGCindices = [1:10:550 557];  % specific RGCs
 
     % Analyzed cells' target center cone purity, [] for all
     targetedCenterPurityRange = [] 
@@ -99,7 +99,7 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
     visualizeMosaicResponses = ~true;                                    % set this to true to visualize the dynamic cone mosaic response during step 1A
 
     
-    computeMRGCMosaicResponses = ~true;                                   % computation stage 2:  compute the mRGC responses
+    computeMRGCMosaicResponses = true;                                   % computation stage 2:  compute the mRGC responses
     onlyInspectInputConeMosaicResponses = ~true;                          % when this is true, and computeMRGCMosaicResponses , we visualize individual traces of cone excitation/photocurrents
 
     visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses = ~true;   
