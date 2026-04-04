@@ -139,6 +139,7 @@ arguments
 
     options.displayType (1,:) char = '';
     options.displayLuminanceHeadroomPercentage (1,1) double = 5/100;
+    options.adjustBackgroundChromaticityToEqualizeLandMconeExcitations (1,1) logical = false;
     options.coneFundamentalsOptimizedForStimPosition (1,1) logical = false;
 
     % Photocurrent (full biophysical model) params
@@ -239,6 +240,7 @@ extraInfoEncodedInFileName = options.extraInfoEncodedInFileName;
 
 displayType = options.displayType;
 displayLuminanceHeadroomPercentage = options.displayLuminanceHeadroomPercentage;
+adjustBackgroundChromaticityToEqualizeLandMconeExcitations = options.adjustBackgroundChromaticityToEqualizeLandMconeExcitations;
 coneFundamentalsOptimizedForStimPosition = options.coneFundamentalsOptimizedForStimPosition;
 
 % Photocurrent params
@@ -392,6 +394,7 @@ if (computeInputConeMosaicResponses || onlyInspectInputConeMosaicResponses || co
         visualizeMosaicResponses, ...
         'displayType', displayType, ...
         'displayLuminanceHeadroomPercentage', displayLuminanceHeadroomPercentage, ...
+        'adjustBackgroundChromaticityToEqualizeLandMconeExcitations', adjustBackgroundChromaticityToEqualizeLandMconeExcitations, ...
         'customTemporalFrequencyAndContrast', customTemporalFrequencyAndContrast, ...
         'nonLinearitiesList', nonLinearitiesList, ...
         'photocurrentParams', photocurrentParams, ...

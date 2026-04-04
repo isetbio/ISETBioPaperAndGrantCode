@@ -93,18 +93,18 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
 
 
     % Actions to perform
-    computeInputConeMosaicResponses = ~true;                             % computation stage 1
-    computeInputConeMosaicResponsesBasedOnConeExcitations = ~true;       % computation sub-stage 1A: compute the cone excitations
-    computeInputConeMosaicResponsesBasedOnPhotocurrents = ~true;         % computation sub-stage 1B: compute the photocurrents
+    computeInputConeMosaicResponses = true;                             % computation stage 1
+    computeInputConeMosaicResponsesBasedOnConeExcitations = true;       % computation sub-stage 1A: compute the cone excitations
+    computeInputConeMosaicResponsesBasedOnPhotocurrents = true;         % computation sub-stage 1B: compute the photocurrents
     visualizeMosaicResponses = ~true;                                    % set this to true to visualize the dynamic cone mosaic response during step 1A
 
     
-    computeMRGCMosaicResponses = true;                                   % computation stage 2:  compute the mRGC responses
+    computeMRGCMosaicResponses = ~true;                                   % computation stage 2:  compute the mRGC responses
     onlyInspectInputConeMosaicResponses = ~true;                          % when this is true, and computeMRGCMosaicResponses , we visualize individual traces of cone excitation/photocurrents
 
     visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses = ~true;   
-    analyzeSTFresponsesForTargetCells = true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
-    visualizeConeExcitationVsPhotocurrentSTFs = true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
+    analyzeSTFresponsesForTargetCells = ~true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
+    visualizeConeExcitationVsPhotocurrentSTFs = ~true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
 
     
   
@@ -118,7 +118,7 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
         % stimulus TF, mean luminance and contrast
         extraInfoEncodedInFileName = sprintf('%1.1fHz_%2.0fCDM2_%2.0f%%',stimulusTFHz, meanLuminanceCdM2, 100*stimContrast);
 
-        % Do it.
+        % Do it. 
         t_contrastConeExcitationVsPhotocurrentSTFs(...
             'STFtemporalFrequencyHz', stimulusTFHz, ...
             'STFmeanLuminanceCdM2', meanLuminanceCdM2, ...
@@ -126,6 +126,7 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
             'STFcontrast', stimContrast, ...
             'STFsfSupport', sfSupport, ...
             'spatialPhaseIncrementDegs', spatialPhaseIncrementDegs, ...
+            'adjustBackgroundChromaticityToEqualizeLandMconeExcitations', true, ...
             'photocurrentParams', photocurrentParams, ...
             'extraInfoEncodedInFileName', extraInfoEncodedInFileName, ...
             'computeInputConeMosaicResponses', computeInputConeMosaicResponses, ...
@@ -234,6 +235,7 @@ arguments
 
     options.displayType (1,:) char = 'CRT-Sony-HorwitzLab';
     options.displayLuminanceHeadroomPercentage (1,1) double = 200/100;
+    options.adjustBackgroundChromaticityToEqualizeLandMconeExcitations (1,1) logical = false;
     options.coneFundamentalsOptimizedForStimPosition (1,1) logical = false;
 
     % Photocurrent (full biophysical model) params
@@ -305,7 +307,7 @@ arguments
     options.exportVideoDirectory (1,:) char = '';
 
 end % arguments
-   
+  
 
 exportPDFdirectory = options.exportPDFdirectory;
 exportVideoDirectory = options.exportVideoDirectory;
@@ -333,7 +335,8 @@ t_mRGCMosaicSTFcomputation(...
     'STFmeanLuminanceCdM2', options.STFmeanLuminanceCdM2, ...              
     'STFbackgroundXYchromaticity', options.STFbackgroundXYchromaticity, ...          
     'displayType', options.displayType, ...                   
-    'displayLuminanceHeadroomPercentage', 200/100, ...         
+    'displayLuminanceHeadroomPercentage', options.displayLuminanceHeadroomPercentage, ...  
+    'adjustBackgroundChromaticityToEqualizeLandMconeExcitations', options.adjustBackgroundChromaticityToEqualizeLandMconeExcitations, ...
     'spatialPhaseIncrementDegs', options.spatialPhaseIncrementDegs, ... 
     'coneFundamentalsOptimizedForStimPosition', options.coneFundamentalsOptimizedForStimPosition, ...
     'photocurrentParams', options.photocurrentParams, ...
