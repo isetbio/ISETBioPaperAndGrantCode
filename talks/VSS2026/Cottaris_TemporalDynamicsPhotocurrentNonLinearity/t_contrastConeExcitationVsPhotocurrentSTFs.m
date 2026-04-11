@@ -1,6 +1,13 @@
 function t_contrastConeExcitationVsPhotocurrentSTFs(options)
-% Examples used to generate material for the VSS2026 talk
-
+% Compute and contrast mRGC STFs that are based on cone excitations vs photocurrents    
+%
+% Description:
+%   Compute and contrast mRGC STFs that are based on cone excitations vs photocurrents    
+%   as a function of 3 important phototransduction variables:
+%     (i) background luminance
+%     (ii) temporal frequency
+%     (iii) contrast
+%
 % History:
 %    03/20/26  NPC  Wrote it.
 
@@ -24,7 +31,7 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
         37.5];
 
     % The Croner&Kaplan temporal frequency
-    targetTemporalFrequencyHz = 4.0;
+    targetTemporalFrequencyHz = 1.0;
     [~,idx] = min(abs(evenlyDividedTemporalFrequenciesFor150HzRefreshRate-targetTemporalFrequencyHz));
     stimulusTFHz = evenlyDividedTemporalFrequenciesFor150HzRefreshRate(idx);
 
@@ -33,7 +40,7 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
     examinedLuminancesCdM2  = 100; % [15  40  100  250];
     
     % Key params: (3) contrast
-    examinedContrastLevels = 0.25; % [0.15 0.25 0.5 0.75 1.0];
+    examinedContrastLevels = 0.75; % [0.15 0.25 0.5 0.75 1.0];
 
     % Chromaticity: (4) chromaticity
     stimChromaticity = 'Achromatic';
@@ -93,18 +100,18 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
 
 
     % Actions to perform
-    computeInputConeMosaicResponses = true;                             % computation stage 1
-    computeInputConeMosaicResponsesBasedOnConeExcitations = true;       % computation sub-stage 1A: compute the cone excitations
-    computeInputConeMosaicResponsesBasedOnPhotocurrents = true;         % computation sub-stage 1B: compute the photocurrents
+    computeInputConeMosaicResponses = ~true;                             % computation stage 1
+    computeInputConeMosaicResponsesBasedOnConeExcitations = ~true;       % computation sub-stage 1A: compute the cone excitations
+    computeInputConeMosaicResponsesBasedOnPhotocurrents = ~true;         % computation sub-stage 1B: compute the photocurrents
     visualizeMosaicResponses = ~true;                                    % set this to true to visualize the dynamic cone mosaic response during step 1A
 
     
-    computeMRGCMosaicResponses = ~true;                                   % computation stage 2:  compute the mRGC responses
+    computeMRGCMosaicResponses = true;                                   % computation stage 2:  compute the mRGC responses
     onlyInspectInputConeMosaicResponses = ~true;                          % when this is true, and computeMRGCMosaicResponses , we visualize individual traces of cone excitation/photocurrents
 
     visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses = ~true;   
-    analyzeSTFresponsesForTargetCells = ~true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
-    visualizeConeExcitationVsPhotocurrentSTFs = ~true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
+    analyzeSTFresponsesForTargetCells = true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
+    visualizeConeExcitationVsPhotocurrentSTFs = true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
 
     
   
