@@ -1,4 +1,10 @@
 function t_inspectEmployedMRGCmosaicProperties(options)
+% Visualize the mosaic of RF centers of an mRGC mosaic along with the corresponding PSF
+%
+% Description:
+%   Visualize the mosaic of RF centers of an mRGC mosaic along with the corresponding PSF
+%
+
 % History:
 %    07/28/25  NPC  Wrote it.
 
@@ -145,7 +151,6 @@ theMRGCmosaic.visualize(...
     'exportVisualizationPDFdirectory', exportVisualizationPDFdirectory);
 
 
-pause
 
 targetedCenterConeNumerosityRange = [1 1];
 targetedSurroundPurityRange = [];
@@ -159,9 +164,6 @@ targetedCenterPurityRange = [];
                             targetedRadialEccentricityRange, ...
                             targetedCenterPurityRange);
 
-
-[min(theCenterConeNumerosities) max(theCenterConeNumerosities)]
-[min(theMRGCmosaic.responseGains(targetRGCindices)) max(theMRGCmosaic.responseGains(targetRGCindices))]
 
 
 end
