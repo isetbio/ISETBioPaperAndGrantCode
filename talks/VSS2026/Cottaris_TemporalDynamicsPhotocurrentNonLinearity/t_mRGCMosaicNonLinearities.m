@@ -1,14 +1,13 @@
 function t_mRGCMosaicNonLinearities(options)
-% Compute and contrast cone-excitations vs. photocurrent-based mRGC
-% responses with an output static nonlinearity
+% Ispect the effect of different properties of the modified Naka-Rusthon output nonlinearity
 %
 % Description:
-%   Compute and contrast cone-excitations vs. photocurrent-based mRGC responses 
-%   to a single drifting grating with the addition of an output static nonlinearity
-
+%   Ispect the effect of different properties of the modified Naka-Rusthon output nonlinearity
+%   by visualizing the cone modulation- and photocurrent-based mRGC response to a single drifting grating
+%
 % History:
 %    11/19/25  NPC  Wrote it.
-
+%
 % Examples:
 %{
 
@@ -19,8 +18,8 @@ function t_mRGCMosaicNonLinearities(options)
     % Basic call to compute the mRGC mosaic responses to both types of
     % input cone mosaic responses (without static nonlinearities)
     t_mRGCMosaicNonLinearities(...
-        'computeInputConeMosaicResponses', false, ...
-        'computeMRGCMosaicResponses', true);
+        'computeInputConeMosaicResponses', true, ...
+        'computeMRGCMosaicResponses', ~true);
 
 
     % Basic call to only visualize previously computed mRGC responses 
@@ -54,36 +53,45 @@ function t_mRGCMosaicNonLinearities(options)
         'computeMRGCMosaicResponses', ~true);
 
 
-    coneExcitationsResponseBasedNonLinearitiesList{1} = struct(...
-        'sourceSignal', 'compositeResponse', ...    % where to apply the non-linerity. choose from {'centerComponentResponse', 'surroundComponentResponse', 'compositeResponse'}
+    % The Naka-Rushton NL does the following:
+    % Rrectified = HalfWaveRectifier(Rin-RinHalfWaveRectifierThreshold);
+    % Rsn = Rrectified^(n*s);
+    % R50sn = Rin50^(n*s)
+    % Rout = Rrectified^(n) / (Rsn + R50sn);
+    % Rout = Rout * prctile(Rrectified,RoutGainAdjustmentPercentile)/prctile(Rout,RoutGainAdjustmentPercentile);
+
+    coneModulationsR50 = 0.5;
+    coneModulationHalfWaveRectifierThreshold = -0.1;
+    coneModulationsResponseBasedNonLinearitiesList{1} = struct(...
+        'sourceSignal', 'compositeResponse', ...       % where to apply the non-linerity. choose from {'centerComponentResponse', 'surroundComponentResponse', 'compositeResponse'}
         'type', 'Naka Rushton', ...
         'params', struct(...
-            'rectification', 'half', ...            % apply non-linearity to both response polarities % choose between {'half', 'full', 'none'}
-            'n', 2.0, ...                           % exponent
-            's', 1.4, ...                           % super-saturation exponent (super-saturating if s > 1)
-            'bias', 0.0, ...                        % bias (in normalized range, based on the passed maxLinearResponse)
-            'c50', 0.05, ...                         % semi-saturation response (in normalized range, based on the passed maxLinearResponse)
-            'gain', 0.05, ...                        % post-non-linearity gain
-            'maxLinearResponse', 1.0) ...           % max absolute value that the linear excitations-based response can have (clipping after that)
-        );
+            'RinHalfWaveRectifierThreshold', coneModulationHalfWaveRectifierThreshold, ...   % H-W rectifier threshold (in cone modulations units)
+            'Rin50', coneModulationsR50, ...            % semi-saturation response (in normalized range, based on the passed RinNormalizer)
+            'n', 3.0, ...                               % exponent
+            's', 1.0, ...                                % super-saturation exponent (super-saturating if s > 1)
+            'RoutGainAdjustmentPercentile', 100 ...
+        ) ...
+    );
 
+    photocurrentR50 = 5;
+    photocurrentHalfWaveRectifierThreshold = -3.0
     photocurrentsResponseBasedNonLinearitiesList{1} = struct(...
-        'sourceSignal', 'compositeResponse', ...    % where to apply the non-linerity. choose from {'centerComponentResponse', 'surroundComponentResponse', 'compositeResponse'}
+        'sourceSignal', 'compositeResponse', ...        % where to apply the non-linerity. choose from {'centerComponentResponse', 'surroundComponentResponse', 'compositeResponse'}
         'type', 'Naka Rushton', ...
         'params', struct(...
-            'rectification', 'none',  ...           % apply non-linearity to both response polarities % choose between {'half', 'full', 'none'}
-            'n', 2.0, ...                           % exponent
-            's', 1.4, ...                           % super-saturation exponent (super-saturating if s > 1)
-            'bias', 0.0, ...                        % bias (in normalized range, based on the passed maxLinearResponse)
-            'c50', 0.05, ...                        % semi-saturation response (in normalized range, based on the passed maxLinearResponse)
-            'gain', 0.05, ...                       % post-non-linearity gain
-            'maxLinearResponse', 50.0) ...          % max absolute value that the linear photocurrent-based response can have (clipping after that)
-        );
+            'RinHalfWaveRectifierThreshold', photocurrentHalfWaveRectifierThreshold, ... % H-W rectifier threshold (in photocurrent units)
+            'Rin50', photocurrentR50, ...               % semi-saturation response (in photocurrent units)
+            'n', 3.0, ...                               % exponent
+            's', 1.0, ...                                % super-saturation exponent (super-saturating if s > 1)
+            'RoutGainAdjustmentPercentile', 95 ...
+        ) ...
+    );
 
 
-    coneExcitationsBasedNonLinearityParamsStruct = struct(...
+    coneModulationsBasedNonLinearityParamsStruct = struct(...
         'label', 'noSatNL', ...     % some string encoding the non-linear processing; it is encoded in the output filename
-        'nonLinearitiesList', coneExcitationsResponseBasedNonLinearitiesList ...
+        'nonLinearitiesList', coneModulationsResponseBasedNonLinearitiesList ...
     );
 
     photocurrentsBasedNonLinearityParamsStruct = struct(...
@@ -91,6 +99,13 @@ function t_mRGCMosaicNonLinearities(options)
         'nonLinearitiesList', photocurrentsResponseBasedNonLinearitiesList ...
     );
 
+
+    t_mRGCMosaicNonLinearities(...
+        'computeInputConeMosaicResponses', false, ...
+        'computeMRGCMosaicResponses', true, ...
+        'coneModulationsBasedNonLinearityParamsStruct', coneModulationsBasedNonLinearityParamsStruct, ...
+        'photocurrentsBasedNonLinearityParamsStruct', photocurrentsBasedNonLinearityParamsStruct ...
+    );
 
     t_mRGCMosaicNonLinearities( ...
         'backgroundLuminanceCdM2', backgroundLuminanceCdM2, ...
@@ -104,7 +119,7 @@ function t_mRGCMosaicNonLinearities(options)
         'computeInputConeMosaicResponsesBasedOnConeExcitations', ~true, ...
         'computeInputConeMosaicResponsesBasedOnPhotocurrents', ~true, ...
         'computeMRGCMosaicResponses', true, ...
-        'coneExcitationsBasedNonLinearityParamsStruct', coneExcitationsBasedNonLinearityParamsStruct, ...
+        'coneModulationsBasedNonLinearityParamsStruct', coneModulationsBasedNonLinearityParamsStruct, ...
         'photocurrentsBasedNonLinearityParamsStruct', photocurrentsBasedNonLinearityParamsStruct);
 
 
@@ -190,7 +205,7 @@ arguments
         'temporalResolutionSeconds',  5/1000);
 
     % Nonlinearities
-    options.coneExcitationsBasedNonLinearityParamsStruct = [];
+    options.coneModulationsBasedNonLinearityParamsStruct = [];
     options.photocurrentsBasedNonLinearityParamsStruct = [];
 
     
@@ -247,7 +262,7 @@ spatialFrequencyCPD = options.spatialFrequencyCPD;
 photocurrentParams = options.photocurrentParams;
 
 % Nonlinearities
-coneExcitationsBasedNonLinearityParamsStruct = options.coneExcitationsBasedNonLinearityParamsStruct;
+coneModulationsBasedNonLinearityParamsStruct = options.coneModulationsBasedNonLinearityParamsStruct;
 photocurrentsBasedNonLinearityParamsStruct = options.photocurrentsBasedNonLinearityParamsStruct;
 
 
@@ -300,7 +315,7 @@ fprintf('Will save figures/videos into %s\n',figureDir);
     opticsForResponses, theOI, thePSFatTheMosaicEccentricity, ...
     photocurrentParams, ...
     theMRGCmosaic, ...
-    coneExcitationsBasedNonLinearityParamsStruct, ...
+    coneModulationsBasedNonLinearityParamsStruct, ...
     photocurrentsBasedNonLinearityParamsStruct, ...
     computeInputConeMosaicResponses, ...
     computeInputConeMosaicResponsesBasedOnConeExcitations, ...
@@ -323,7 +338,7 @@ function [theInputConeMosaicResponsesFullFileName, theMRGCMosaicResponsesFullFil
     opticsForResponses, theOI, thePSFatTheMosaicEccentricity, ...
     photocurrentParams, ...
     theMRGCmosaic, ...
-    coneExcitationsBasedMRGCNonLinearityParamsStruct, ...
+    coneModulationsBasedNonLinearityParamsStruct, ...
     photocurrentsBasedMRGCNonLinearityParamsStruct, ...
     computeInputConeMosaicResponses, ...
     computeInputConeMosaicResponsesBasedOnConeExcitations, ...
@@ -358,9 +373,9 @@ function [theInputConeMosaicResponsesFullFileName, theMRGCMosaicResponsesFullFil
             'generateMissingSubDirs', true);
 
 
-    if (~isempty(coneExcitationsBasedMRGCNonLinearityParamsStruct))
+    if (~isempty(coneModulationsBasedNonLinearityParamsStruct))
         theMRGCMosaicResponsesFullFileName = ...
-            strrep(theMRGCMosaicResponsesFullFileName, 'Responses', sprintf('Responses_%s', coneExcitationsBasedMRGCNonLinearityParamsStruct.label));
+            strrep(theMRGCMosaicResponsesFullFileName, 'Responses', sprintf('Responses_%s', coneModulationsBasedNonLinearityParamsStruct.label));
     elseif (~isempty(photocurrentsBasedMRGCNonLinearityParamsStruct))
         theMRGCMosaicResponsesFullFileName = ...
             strrep(theMRGCMosaicResponsesFullFileName, 'Responses', sprintf('Responses_%s', photocurrentsBasedMRGCNonLinearityParamsStruct.label));
@@ -418,10 +433,10 @@ function [theInputConeMosaicResponsesFullFileName, theMRGCMosaicResponsesFullFil
 
     if (computeMRGCMosaicResponses) || (onlyVisualizeMRGCresponses)
 
-        if (~isempty(coneExcitationsBasedMRGCNonLinearityParamsStruct))
-            coneExcitationsResponseBasedNonLinearitiesList = coneExcitationsBasedMRGCNonLinearityParamsStruct.nonLinearitiesList;
+        if (~isempty(coneModulationsBasedNonLinearityParamsStruct))
+            coneModulationsResponseBasedNonLinearitiesList = coneModulationsBasedNonLinearityParamsStruct.nonLinearitiesList;
         else
-            coneExcitationsResponseBasedNonLinearitiesList = {};
+            coneModulationsResponseBasedNonLinearitiesList = {};
         end
 
         if (~isempty(photocurrentsBasedMRGCNonLinearityParamsStruct))
@@ -433,7 +448,7 @@ function [theInputConeMosaicResponsesFullFileName, theMRGCMosaicResponsesFullFil
         computeAllMRGCMosaicResponses(...
             theInputConeMosaicResponsesFullFileName, ...
             theMRGCMosaicResponsesFullFileName, ...
-            coneExcitationsResponseBasedNonLinearitiesList, ...
+            coneModulationsResponseBasedNonLinearitiesList, ...
             photocurrentResponseBasedNonLinearitiesList, ...
             onlyVisualizeMRGCresponses, ...
             figureDir);
@@ -446,7 +461,7 @@ end % computeSimulationForCurrentStimulus
 %
 %
 function computeAllMRGCMosaicResponses(theInputConeMosaicResponsesFullFileName, theMRGCMosaicResponsesFullFileName, ...
-    coneExcitationsResponseBasedNonLinearitiesList, ...
+    coneModulationsResponseBasedNonLinearitiesList, ...
     photocurrentResponseBasedNonLinearitiesList, ...
     onlyVisualizeMRGCresponses, ...
     figureDir)
@@ -464,7 +479,7 @@ function computeAllMRGCMosaicResponses(theInputConeMosaicResponsesFullFileName, 
             computeMRGCMosaicResponses(theMRGCmosaic, ...
                 stimParams.temporalSupportSeconds, ...
                 theInputConeMosaicExcitationsResponse, ...
-                coneExcitationsResponseBasedNonLinearitiesList);
+                coneModulationsResponseBasedNonLinearitiesList);
     
         fprintf('Max LINEAR response: %f\n', max(abs(theMRGCmosaicExcitationBasedLinearResponses(:))));
         fprintf('Max NON-LINEAR response: %f\n', max(abs(theMRGCmosaicExcitationBasedResponses(:))));
@@ -496,12 +511,12 @@ function computeAllMRGCMosaicResponses(theInputConeMosaicResponsesFullFileName, 
                 'theInputConeMosaicPeriodicPhotocurrentsResponse', ...
                 'theInputConeMosaicBackgroundPhotocurrents');
     
-            % excitations-based mRGC responses (periodic)
+            % cone modulations-based mRGC responses (periodic)
             [theMRGCmosaicResponses, temporalSupportSeconds, theMRGCmosaicLinearResponses] = ...
                 computeMRGCMosaicResponses(theMRGCmosaic, ...
                     theInputConeMosaicPeriodicExcitationsTemporalSupportSeconds, ...
                     theInputConeMosaicPeriodicExcitationsResponse, ...
-                    coneExcitationsResponseBasedNonLinearitiesList);
+                    coneModulationsResponseBasedNonLinearitiesList);
     
             theMRGCmosaicExcitationsBasedResponsesPeriodic = struct(...
                 'linearResponses', theMRGCmosaicLinearResponses, ...
@@ -564,21 +579,17 @@ function computeAllMRGCMosaicResponses(theInputConeMosaicResponsesFullFileName, 
     end
 
 
-
-
-
-
     % Visualize responses
     mRGCsNum = size(theMRGCmosaicExcitationBasedResponsesSinglePeriod.responses,3);
     maxExcitationsBasedResponse = max( ...
-        [max(abs(theMRGCmosaicExcitationBasedResponsesSinglePeriod.responses(:)))
-        max(abs(theMRGCmosaicExcitationBasedResponsesSinglePeriod.linearResponses(:))) ]);
+        [prctile(abs(theMRGCmosaicExcitationBasedResponsesSinglePeriod.responses(:)),95)
+         prctile(abs(theMRGCmosaicExcitationBasedResponsesSinglePeriod.linearResponses(:)),95) ]);
 
     if (photocurrentResponsesHaveBeenComputed)
         idx = find(theMRGCmosaicPhotocurrentsBasedResponsesPeriodic.temporalSupportSeconds>0.5);
         maxPhotocurrentsBasedResponse = max(...
-            [max(max(abs(squeeze(theMRGCmosaicPhotocurrentsBasedResponsesPeriodic.responses(1,idx,:))))) ...
-            max(abs(theMRGCmosaicPhotocurrentsBasedResponsesSinglePeriod.linearResponses(:)))]);
+            [prctile(max(abs(squeeze(theMRGCmosaicPhotocurrentsBasedResponsesPeriodic.responses(1,idx,:)))),95) ...
+             prctile(abs(theMRGCmosaicPhotocurrentsBasedResponsesSinglePeriod.linearResponses(:)), 95)]);
     end
 
     hFig = figure(1); clf;
@@ -591,7 +602,7 @@ function computeAllMRGCMosaicResponses(theInputConeMosaicResponsesFullFileName, 
 
 
     excitationsBasedTicks = -1:0.1:1;
-    photocurrentsBasedTicks = -20:2:20;
+    photocurrentsBasedTicks = -10:2:10;
 
     for exemplarRGCindex = 1:mRGCsNum
 
@@ -603,6 +614,7 @@ function computeAllMRGCMosaicResponses(theInputConeMosaicResponsesFullFileName, 
         theLinearResponse = theMRGCmosaicExcitationBasedResponsesSinglePeriod.linearResponses(1,:,exemplarRGCindex);
         theNonLinearResponse = theMRGCmosaicExcitationBasedResponsesSinglePeriod.responses(1,:,exemplarRGCindex);
         plotNonLinearity(ax, theLinearResponse, theNonLinearResponse, maxExcitationsBasedResponse, ...
+            coneModulationsResponseBasedNonLinearitiesList, ...
             excitationsBasedTicks, false, sprintf('cone excitations - based\nactivation function'));
 
         if (photocurrentResponsesHaveBeenComputed)
@@ -611,6 +623,7 @@ function computeAllMRGCMosaicResponses(theInputConeMosaicResponsesFullFileName, 
             theLinearResponse = theMRGCmosaicPhotocurrentsBasedResponsesSinglePeriod.linearResponses(1,:,exemplarRGCindex);
             theNonLinearResponse = theMRGCmosaicPhotocurrentsBasedResponsesSinglePeriod.responses(1,:,exemplarRGCindex);
             plotNonLinearity(ax, theLinearResponse, theNonLinearResponse, maxPhotocurrentsBasedResponse, ...
+                photocurrentResponseBasedNonLinearitiesList, ...
                 photocurrentsBasedTicks, true, sprintf('photocurrents - based\nactivation function'));
         end
 
@@ -676,7 +689,7 @@ function plotResponse(ax, theTemporalSupport, theResponse, theLinearResponse, ma
     hold(ax, 'on')
     plot(ax, theTemporalSupport*1e3, theResponse*0, 'k-', 'LineWidth', 1.0);
     if (showLegend)
-        legend(ax, [p1 p2], {'input mRGC response (L)', 'output mRGC respone (R)'}, 'Location', 'NorthEast', 'NumColumns', 1);
+        legend(ax, [p1 p2], {'input mRGC response (Rin)', 'output mRGC respone (Rout)'}, 'Location', 'NorthEast', 'NumColumns', 1);
     end
     hold(ax, 'off')
     xTickMilliseconds = 0:1000:30000;
@@ -692,17 +705,41 @@ function plotResponse(ax, theTemporalSupport, theResponse, theLinearResponse, ma
 end
 
 
-function plotNonLinearity(ax, theLinearResponse, theResponse, maxResponse, xyTicks, showXlabel, plotTitle)
+function plotNonLinearity(ax, theLinearResponse, theResponse, maxResponse, nonLinearitiesList, xyTicks, showXlabel, plotTitle)
     plot(ax, maxResponse*[-1 1], [0 0], 'k-', 'LineWidth', 1.0);
     hold(ax, 'on')
     plot(ax, [0 0], maxResponse*[-1 1], 'k-', 'LineWidth', 1.0);
-    %plot(ax, theLinearResponse, theResponse, 'r-', 'LineWidth', 1.5);
+    
 
-    scatter(ax, theLinearResponse, theResponse, 100, ...
+    if (isstruct(nonLinearitiesList))
+        theNonLinearityStruct = nonLinearitiesList;
+        if (...
+                    strcmp(theNonLinearityStruct.sourceSignal, 'compositeResponse') && ...
+                    strcmp(theNonLinearityStruct.type, 'Naka Rushton') ...
+                )
+            p1 = plot(ax, theNonLinearityStruct.params.RinHalfWaveRectifierThreshold*[1 1], maxResponse*[-1 1], 'r--', 'LineWidth', 1.0);
+            p2 = plot(ax, theNonLinearityStruct.params.Rin50*[1 1], maxResponse*[-1 1], 'b--', 'LineWidth', 1.0);
+        end
+    else
+        for i = 1:numel(nonLinearitiesList)
+            theNonLinearityStruct = nonLinearitiesList{i};
+            if (...
+                    strcmp(theNonLinearityStruct.sourceSignal, 'compositeResponse') && ...
+                    strcmp(theNonLinearityStruct.type, 'Naka Rushton') ...
+                )
+                p1 = plot(ax, theNonLinearityStruct.params.RinHalfWaveRectifierThreshold*[1 1], maxResponse*[-1 1], 'r--', 'LineWidth', 1.0);
+                p2 = plot(ax, theNonLinearityStruct.params.Rin50*[1 1], maxResponse*[-1 1], 'b--', 'LineWidth', 1.0);
+            end
+        end
+    end
+
+    p3 = scatter(ax, theLinearResponse, theResponse, 100, ...
         'LineWidth', 1.0, 'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5, ...
-        'MarkerFaceColor', [0.5 0.5 1], 'MarkerEdgeColor', 'none');
+        'MarkerFaceColor', [0.7 0.5 0.0], 'MarkerEdgeColor', 'none');
+    plot(ax, maxResponse*[-1 1], maxResponse*[-1 1], 'k--');
     hold(ax, 'off')
 
+    legend(ax, [p1 p2 p3], {'RinHWrectThreshold', 'Rin50', 'Rout'}, 'Location', 'SouthEast');
     set(ax, 'YLim', maxResponse * [-1 1], 'XLim', maxResponse * [-1 1], 'FontSize', 16);
     set(ax, 'XTick', xyTicks, 'YTick', xyTicks);
     xtickangle(ax, 90);
@@ -710,9 +747,9 @@ function plotNonLinearity(ax, theLinearResponse, theResponse, maxResponse, xyTic
     axis(ax, 'square');
     title(plotTitle);
     if (showXlabel)
-        xlabel(ax, 'input mRGC response (L)');
+        xlabel(ax, 'input mRGC response (Rin)');
     end
-    ylabel(ax, 'output mRGC response (R)');
+    ylabel(ax, 'output mRGC response (Rout)');
 end
 
 

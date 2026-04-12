@@ -16,8 +16,8 @@
 %       (iii) contrast
 %
 % - t_mRGCMosaicNonLinearities
-%      Compute and contrast cone-excitations vs. photocurrent-based mRGC responses 
-%      to a single drifting grating with the addition of an output static nonlinearity
+%      Ispect the effect of different properties of the modified Naka-Rusthon output nonlinearity
+%      by visualizing the cone modulation- and photocurrent-based mRGC response to a single drifting grating
 %
 % - t_inspectEmployedMRGCmosaicProperties
 %       Visualize the mosaic of RF centers of an mRGC mosaic along with the corresponding PSF
