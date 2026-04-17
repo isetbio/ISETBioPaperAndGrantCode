@@ -1,4 +1,4 @@
-% ISETBioPaperAndGrantCode/papers/TreeshrewModel
+% ISETBioPaperAndGrantCode/talks/VSS2026
 %
 % Scripts used to generate material for the VSS2026 talk 
 %

@@ -327,6 +327,11 @@ if (strcmp(exportVideoDirectory, 'local'))
     exportVideoDirectory = fullfile(ISETBioPaperAndGrantCodeRootDirectory, mfilename);
 end
 
+%
+%  t_mRGCMosaicSTFcomputation lives in :
+%     fullfile(ISETBioPaperAndGrantCodeRootDirectory, 'papers', 'CottarisJCN2026')
+% 
+
 t_mRGCMosaicSTFcomputation(...
     'rgcMosaicName', options.rgcMosaicName, ...
     'coneMosaicSpecies', options.coneMosaicSpecies, ...
