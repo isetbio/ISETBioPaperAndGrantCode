@@ -5,7 +5,20 @@ function t_mRGCMosaicSynthesizeTemporalFilters(options)
 %   t_mRGCMosaicSynthesizeTemporalFilters()
 %
 % Description:
-%   Demonstrates how to generate temporal filters for the center and surround mechanisms of cells in a synthesized mRGC mosaic
+%   Demonstrates how to generate temporal filters for the center and surround mechanisms of cells in a 
+%   synthesized mRGC mosaic. This is done for a single synthetic mRGC as
+%   follows:
+%
+%   Step1: we computing TTFs based on cone photocurrent inputs to the chosen synthetic mRGC 
+%       using a disk stimulus (to drive mainly the center) and an annulus stimulus which drives the surround. 
+%       These TTFs are computed by calling :
+%           RGCMosaicAnalyzer.compute.mosaicTTFsForStimulusChromaticityAndOptics)
+%
+%   Step2: we derive the 'intrinsic' center and surround temporal filters of the synthetic mRGC so that the filter cascade
+%       of the photocurrentBasedTTF * intrinscicTTF  = BenardeteKaplan1992TTF (separately for the center and the surround)
+%       This is done by calling:
+%           RGCMosaicAnalyzer.compute.MRGCtemporalFiltersFromPhotocurrentsBasedTTF
+%
 %
 %  This is set up with key/value pairs that demonstate how to select different
 %  options. Different choices are illustrated in the examples
@@ -191,7 +204,7 @@ function t_mRGCMosaicSynthesizeTemporalFilters(options)
 
 
 
-    % -----  Synthesize the mRGC temporal filters
+    % -----  Synthesize the center mRGC temporal filter
     t_mRGCMosaicSynthesizeTemporalFilters(...
         'rgcMosaicName', 'JCNpaperTemporal7DegsMosaic', ...
         'opticsWavefrontSpatialSamples', opticsWavefrontSpatialSamples, ...
@@ -213,10 +226,14 @@ function t_mRGCMosaicSynthesizeTemporalFilters(options)
         'inspectInputConeMosaicResponses', ~true, ...
         'visualizeMosaicResponses', ~true, ...
         'computeMRGCMosaicResponses', ~true, ...
-        'synthesizeMRGCtemporalFiltersForRGCwithIndex', [30]);
+        'synthesizeMRGCtemporalFiltersForRGCwithIndex', [30], ...
+        'temporalFilterSynthesisMethod', 'direct deconvolution', ...
+        'targetCellImpulseResponseFunction', 'Benardete&Kaplan 1992, Figure 6 (ON), center');
 
 
-t_mRGCMosaicSynthesizeTemporalFilters(...
+
+    % -----  Synthesize the surround mRGC temporal filter
+    t_mRGCMosaicSynthesizeTemporalFilters(...
         'rgcMosaicName', 'JCNpaperTemporal7DegsMosaic', ...
         'opticsWavefrontSpatialSamples', opticsWavefrontSpatialSamples, ...
         'stimulusPixelSizeAsFractionOfConeAperture', stimulusPixelSizeAsFractionOfConeAperture, ...
@@ -238,8 +255,9 @@ t_mRGCMosaicSynthesizeTemporalFilters(...
         'inspectInputConeMosaicResponses', ~true, ...
         'visualizeMosaicResponses', ~true, ...
         'computeMRGCMosaicResponses', ~true, ...
-        'synthesizeMRGCtemporalFiltersForRGCwithIndex', [30]);
-
+        'synthesizeMRGCtemporalFiltersForRGCwithIndex', [30], ...
+        'temporalFilterSynthesisMethod', 'direct deconvolution', ...
+        'targetCellImpulseResponseFunction', 'Benardete&Kaplan 1992, Figure 6 (ON), surround');
 
 
 %}
@@ -325,7 +343,7 @@ arguments
     options.stimulusMaxSupportDegs (1,:) double = [];
     options.stimulusPositionDegs (1,:) double = [];
     options.stimulusSizeDegs (1,:) double = [];
-    options.stimulusShape (1,:) char{mustBeMember(options.stimulusShape, {'spot' 'annulus'})} = 'spot';
+    options.stimulusShape (1,:) char{mustBeMember(options.stimulusShape, {'spot', 'annulus'})} = 'spot';
 
 
     % Photocurrent (full biophysical model) params
@@ -336,8 +354,24 @@ arguments
 
     % Nonlinearities
     options.mRGCNonLinearityParamsStruct = [];
-
     options.mRGCsOperateOnBackgroundAdaptedPhotocurrents (1,1) logical = true;
+
+    % Synthesis of intrisic temporal filters
+    options.temporalFilterSynthesisMethod (1,:) char{mustBeMember(options.temporalFilterSynthesisMethod, ...
+        {...
+            'direct deconvolution', ...
+            'Benardete&Kaplan1992 model' ...
+            'Purpura et al 1990 model' ...
+        })} = 'direct deconvolution';
+
+    % Target cell impulse response function
+    options.targetCellImpulseResponseFunction (1,:) char{mustBeMember(options.targetCellImpulseResponseFunction, ...
+        {...
+            'Benardete&Kaplan 1992, Figure 6 (ON), center' ...
+            'Benardete&Kaplan 1992, Figure 6 (ON), surround' ...
+            'Benardete&Kaplan 1992, Figure 6 (OFF), center' ...
+            'Benardete&Kaplan 1992, Figure 6 (OFF), surround' ...
+        })} = 'Benardete&Kaplan 1992, Figure 6 (ON), center';
 
     % Visualizations
     options.visualizeMRGCmosaic (1,1) logical = false;
@@ -432,6 +466,12 @@ mRGCsOperateOnBackgroundAdaptedPhotocurrents = options.mRGCsOperateOnBackgroundA
 mRGCNonLinearityParamsStruct = options.mRGCNonLinearityParamsStruct;
 temporalPhaseIncrementDegs = options.temporalPhaseIncrementDegs;
 
+% Temporal filter synthesis method
+temporalFilterSynthesisMethod = options.temporalFilterSynthesisMethod;
+
+% Target cell and center/surround filter
+targetCellImpulseResponseFunction = options.targetCellImpulseResponseFunction;
+
 % Visualizations
 visualizeMRGCmosaic = options.visualizeMRGCmosaic;
 visualizeConePoolingMapForRGCindex = options.visualizeConePoolingMapForRGCindex;
@@ -452,14 +492,8 @@ synthesizeMRGCtemporalFiltersForRGCwithIndex = options.synthesizeMRGCtemporalFil
 debugInputConeMosaicPcurrentResponse = options.debugInputConeMosaicPcurrentResponse;
 inspectInputConeMosaicResponses = options.inspectInputConeMosaicResponses;
 
-synthesizeMRGCtemporalFilters  = options.synthesizeMRGCtemporalFilters;
-analyzeTTFresponsesForTargetCells = options.analyzeTTFresponsesForTargetCells;
-
-
 % Close previously open figures
 closePreviouslyOpenFigures = options.closePreviouslyOpenFigures;
-
-
 
 if (closePreviouslyOpenFigures)
     % Close any stray figs
@@ -780,9 +814,13 @@ if (computeMRGCMosaicResponses)
         return;
 end
 
+
+% Synthesize the filters
 if (~isempty(synthesizeMRGCtemporalFiltersForRGCwithIndex))
-    visualizeMosaicResponses = true;
+    visualizeMosaicResponses = ~true;
     RGCMosaicAnalyzer.compute.MRGCtemporalFiltersFromPhotocurrentsBasedTTF(...
+        temporalFilterSynthesisMethod, ...
+        targetCellImpulseResponseFunction, ...
         stimulusShape, ...
         allowNonZeroBaselineInSineWaveFitsToResponseTimeSeries, ...
         synthesizeMRGCtemporalFiltersForRGCwithIndex, ...

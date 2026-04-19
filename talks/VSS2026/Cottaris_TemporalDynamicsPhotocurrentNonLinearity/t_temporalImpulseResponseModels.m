@@ -1,4 +1,9 @@
 function t_temporalImpulseResponseModels
+% Demonstrate the temporal filters models of Benardete&Kaplan (1992a) and
+% Purpura et al (1990)
+%
+% Syntax:
+%   t_temporalImpulseResponseModels()
 
 	% Temporal frequency support
     temporalFrequencySupportHz = 0.0:0.5:200;
@@ -19,7 +24,7 @@ function t_temporalImpulseResponseModels
         theCenterDiskImpulseResponseData, theSurroundAnnulusImpulseResponseData)
 
 
-    params = PurpuraTranchinaKaplanShapleyParams('P8/25_@4600Trolands');
+    params = PurpuraTranchinaKaplanShapleyParams('P26/10_@120Trolands');
     theDriftingGratingTTF = twoStageLeadLagNstageLowPassFilterCascadeTTF(params, temporalFrequencySupportHz);
     theDriftingGratingImpulseResponseData = impulseResponseFunctionFromTTF(theDriftingGratingTTF, temporalFrequencySupportHz);
    
@@ -169,14 +174,19 @@ function theTTF = twoStageLeadLagNstageLowPassFilterCascadeTTF(params, temporalF
     theLowPassFilter1TTF = (1 + 1i * omega * lowPassTimeConstant1Seconds) .^ (-n1LowPassStagesNum);
 
     % N2-stage low-pass filter with lowPassTimeConstant2Seconds time constant 
-    theLowPassFilter2TTF = (1 + 1i * omega * lowPassTimeConstant2Seconds) .^ (-n2LowPassStagesNum);
-
+    if (n2LowPassStagesNum>0)
+        theLowPassFilter2TTF = (1 + 1i * omega * lowPassTimeConstant2Seconds) .^ (-n2LowPassStagesNum);
+    else
+        theLowPassFilter2TTF = theLowPassFilter1TTF*0+1;
+    end
 
     theTTF = gain * theDelayFilterTTF .* theLeadLagFilterTTF .* theLowPassFilter1TTF .* theLowPassFilter2TTF;
 end
 
 
 function params = PurpuraTranchinaKaplanShapleyParams(whichCellAndIllumination)
+
+    % To be used with @twoStageLeadLagNstageLowPassFilterCascadeTTF()
 
     switch (whichCellAndIllumination)
         case 'P8/25_@4600Trolands'
@@ -195,8 +205,34 @@ function params = PurpuraTranchinaKaplanShapleyParams(whichCellAndIllumination)
             params = [15  4   0.30   67.0/1000   2.8/1000   2.5/1000   38.0/1000   71/1000];
 
 
+        case 'P24/9_@1900Trolands'
+            params = [30  4   0.55   30.0/1000   2.0/1000   0.9/1000   9.6/1000    50/1000];
+
+        case 'P24/9_@120Trolands'
+            params = [21  4   0.44   45.0/1000   2.5/1000   1.3/1000   15.0/1000    63/1000];
+
+        case 'P24/9_@3Trolands'
+            params = [21  4   0.21  143/1000     2.7/10000   2.3/1000  52.0/1000    85/1000];
+
+        case 'P24/9_@0.3Trolands'
+            params = [30  4   0.14  562/1000    401/1000    2.1/1000   23/1000     133/1000];
+
+
+        case 'P8/14_@4600Trolands'
+            params = [24  0   0.22   90/1000      52/1000    1.8/1000   nan        40/1000];
+
+        case 'P8/14_@460Trolands'
+            params = [24  0   0.16   95/1000      53/1000    2.4/1000   nan        55/1000];
+
+        case 'P26/10_@1900Trolands'
+            params = [30  0   0.51   70/1000      36/1000    1.4/1000   nan        39/1000];
+
+        case 'P26/10_@120Trolands'
+            params = [21  0   0.29  107/1000      72/1000    2.5/1000   nan        49/1000];
+
         otherwise
             error('No data for PurpuraTranchinaKaplanShapley (1990)''%s'' cell', whichCellAndIllumination);
+
     end
 
     idx = [3 8 4 5 6 7 1 2];
@@ -206,6 +242,9 @@ end
 
 
 function params = BenardeteAndKaplan1997Figure6CenterSurroundFilterParams(whichCell)
+
+    % To be used with @oneStageHighPassNstageLowPassFilterCascadeTTF()
+
     switch (whichCell)
         case 'ON'
             params.centerIR.pVector(1) = 184.20;
