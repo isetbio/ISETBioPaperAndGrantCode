@@ -6,26 +6,36 @@ function t_temporalImpulseResponseModels
 %   t_temporalImpulseResponseModels()
 
 	% Temporal frequency support
-    temporalFrequencySupportHz = 0.0:0.5:200;
-
+    temporalFrequencySupportHz = 0.5:0.5:200;
 
     params = RGCmodels.BenardeteKaplan1992.figure6CenterSurroundFilterParams('ON');
     params = RGCmodels.BenardeteKaplan1992.figure6CenterSurroundFilterParams('OFF');
+    params = RGCmodels.BenardeteKaplan1992.figure7CenterSurroundFilterParams();
 
     % TTF models as 1-stage high-pass, N-stage low-pass filter cascade
-	theCenterDiskTTF = RGCmodels.BenardeteKaplan1992.oneStageHighPassNstageLowPassFilterCascadeTTF(params.centerIR.pVector, temporalFrequencySupportHz);
-    theSurroundAnnulusTTF = RGCmodels.BenardeteKaplan1992.oneStageHighPassNstageLowPassFilterCascadeTTF(params.surroundIR.pVector, temporalFrequencySupportHz);
+	theCenterDiskTTF = RGCmodels.BenardeteKaplan1992.oneStageHighPassNstageLowPassFilterCascadeTTF(...
+        params.centerIR.pVector, temporalFrequencySupportHz);
+    
+    theSurroundAnnulusTTF = RGCmodels.BenardeteKaplan1992.oneStageHighPassNstageLowPassFilterCascadeTTF(...
+        params.surroundIR.pVector, temporalFrequencySupportHz);
 
-    theCenterDiskImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.impulseResponseFunctionFromTTF(theCenterDiskTTF, temporalFrequencySupportHz);
-    theSurroundAnnulusImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.impulseResponseFunctionFromTTF(theSurroundAnnulusTTF, temporalFrequencySupportHz);
+    performFFTshift = false;
+    zeroPaddingLength = 512;
+    theCenterDiskImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.impulseResponseFunctionFromTTF(...
+        theCenterDiskTTF, temporalFrequencySupportHz, performFFTshift, zeroPaddingLength);
+
+    theSurroundAnnulusImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.impulseResponseFunctionFromTTF(...
+        theSurroundAnnulusTTF, temporalFrequencySupportHz, performFFTshift, zeroPaddingLength);
 
     plotFilters(1, temporalFrequencySupportHz, ...
         theCenterDiskTTF, theSurroundAnnulusTTF, ...
         theCenterDiskImpulseResponseData, theSurroundAnnulusImpulseResponseData)
 
+    pause
     params = RGCmodels.PurpuraTranchinaKaplanShapley1990.table1FilterParams('P26/10_@120Trolands');
     theDriftingGratingTTF = RGCmodels.PurpuraTranchinaKaplanShapley1990.twoStageLeadLagNstageLowPassFilterCascadeTTF(params, temporalFrequencySupportHz);
-    theDriftingGratingImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.impulseResponseFunctionFromTTF(theDriftingGratingTTF, temporalFrequencySupportHz);
+    theDriftingGratingImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.impulseResponseFunctionFromTTF(...
+        theDriftingGratingTTF, temporalFrequencySupportHz, performFFTshift, zeroPaddingLength)
    
 
     plotFilters(2, temporalFrequencySupportHz, ...
@@ -34,7 +44,8 @@ function t_temporalImpulseResponseModels
 
     params = RGCmodels.PurpuraTranchinaKaplanShapley1990.table1FilterParams('P8/25_@46Trolands');
     theDriftingGratingTTF = RGCmodels.PurpuraTranchinaKaplanShapley1990.twoStageLeadLagNstageLowPassFilterCascadeTTF(params, temporalFrequencySupportHz);
-    theDriftingGratingImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.impulseResponseFunctionFromTTF(theDriftingGratingTTF, temporalFrequencySupportHz);
+    theDriftingGratingImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.impulseResponseFunctionFromTTF(...
+        theDriftingGratingTTF, temporalFrequencySupportHz, performFFTshift, zeroPaddingLength);
    
 
     plotFilters(3, temporalFrequencySupportHz, ...
