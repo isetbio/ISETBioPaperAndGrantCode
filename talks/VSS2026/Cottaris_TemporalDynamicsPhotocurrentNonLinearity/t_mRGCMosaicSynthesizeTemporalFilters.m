@@ -206,11 +206,22 @@ function t_mRGCMosaicSynthesizeTemporalFilters(options)
 
     % -----  Synthesize the center mRGC temporal filter
 
+    % choose between :
+    %   'direct division of TTFs', 
+    %   'differenceOfLowPassFilters'
+    %   'dampedOscillationFilter'
+    %   'delayLeadLagFilter'
+    %   'delayLeadLagFilter2'
+    %   'asymmetricBandPassFilter'
+    %   'delayHighPassFilter'
+
+    temporalFilterSynthesisMethod = 'differenceOfLowPassFilters';
+
     innerRetinaFilterDerivationParams = struct(...
-        'temporalFilterSynthesisMethod', 'dampedOscillationFilter', ... % choose between {'direct division of TTFs', 'differenceOfLowPassFilters', 'dampedOscillationFilter', and other filter types}
+        'temporalFilterSynthesisMethod', temporalFilterSynthesisMethod, ...
         'minFrequencyHzWithUnitWeight', 0.5, ...
-        'maxFrequencyHzWithUnitWeight', 50, ...
-        'solverType',  'fmincon', ... % choose from {'fmincon'; 'global-search'; 'multi-start'}
+        'maxFrequencyHzWithUnitWeight', 100, ...
+        'solverType',  'multi-start', ... % choose from {'fmincon'; 'global-search'; 'multi-start'}
         'multiStartsNum', 128, ...
         'useParallel', ~true);
 
