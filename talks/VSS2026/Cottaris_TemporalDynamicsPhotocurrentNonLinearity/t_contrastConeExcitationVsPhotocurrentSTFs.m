@@ -31,16 +31,16 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
         37.5];
 
     % The Croner&Kaplan temporal frequency
-    targetTemporalFrequencyHz = 1.0;
+    targetTemporalFrequencyHz = 4.0;
     [~,idx] = min(abs(evenlyDividedTemporalFrequenciesFor150HzRefreshRate-targetTemporalFrequencyHz));
     stimulusTFHz = evenlyDividedTemporalFrequenciesFor150HzRefreshRate(idx);
 
 
     % Key params: (2) mean luminance
-    examinedLuminancesCdM2  = 100; % [15  40  100  250];
+    examinedLuminancesCdM2  = 250; % 100; % [15  40  100  250];
     
     % Key params: (3) contrast
-    examinedContrastLevels = 0.75; % [0.15 0.25 0.5 0.75 1.0];
+    examinedContrastLevels = 1.0; %0.75; % [0.15 0.25 0.5 0.75 1.0];
 
     % Chromaticity: (4) chromaticity
     stimChromaticity = 'Achromatic';
@@ -106,11 +106,11 @@ function t_contrastConeExcitationVsPhotocurrentSTFs(options)
     visualizeMosaicResponses = ~true;                                    % set this to true to visualize the dynamic cone mosaic response during step 1A
 
     
-    computeMRGCMosaicResponses = true;                                   % computation stage 2:  compute the mRGC responses
+    computeMRGCMosaicResponses = ~true;                                   % computation stage 2:  compute the mRGC responses
     onlyInspectInputConeMosaicResponses = ~true;                          % when this is true, and computeMRGCMosaicResponses , we visualize individual traces of cone excitation/photocurrents
 
     visualizeSinusoidalFitsForPhotocurrentBasedMRGCresponses = ~true;   
-    analyzeSTFresponsesForTargetCells = true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
+    analyzeSTFresponsesForTargetCells = ~true;                           % compute the STFs and visualize the population BPIs for cone excitations vs photocurrents
     visualizeConeExcitationVsPhotocurrentSTFs = true;                   %visualize cone excitation and photocurrent based STFs in individualmRGCs
 
     
