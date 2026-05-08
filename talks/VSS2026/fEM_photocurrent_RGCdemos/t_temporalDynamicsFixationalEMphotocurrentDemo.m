@@ -32,6 +32,8 @@ function t_temporalDynamicsFixationalEMphotocurrentDemo(options)
         'sizeDegs', 2.0, ...
         'spatialPhaseIncrementDegs', 30);
         
+    HDRdatabaseYear = '';
+    sceneCropParams = [];
 
 
     % ========== VSS 2026 HDR scene  ======================================
