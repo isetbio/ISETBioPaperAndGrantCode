@@ -36,59 +36,115 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
     end
 
 
-    % Load an HDR scene
-    [theScene, spatialSupportXdegs, spatialSupportYdegs] = demoEngine.scene.loadMachnesterDataBaseScene(...
-        HDRdatabaseYear, sprintf('%s.mat', HDRimageName));
 
-    % Visualize scene and its luminance map
-    figNo = 1;
-    thePDFfileName = sprintf('%s_%d_%s_original.pdf', 'Manchester', HDRdatabaseYear, HDRimageName);
-    demoEngine.scene.visualizeHDR(theScene, spatialSupportXdegs, spatialSupportYdegs, sceneCropParams, figNo,...
-        exportVisualizationRootDirectory, ...
-        exportVisualizationPDFdirectory, ...
-        thePDFfileName);
+    gratingParams = [];
+    if (isstruct(HDRimageName))
 
-    % Crop the scene
-    if (~isempty(sceneCropParams))
-        [theScene, spatialSupportXdegs, spatialSupportYdegs] = ...
-            demoEngine.scene.crop(theScene, spatialSupportXdegs, spatialSupportYdegs, ...
-            sceneCropParams);
+        % Get the grating params
+        gratingParams = HDRimageName;
+
+        visualizeStimulusSequence = true;
+        [theStimulusSceneSequence, theNullStimulusScene, theSceneStimulusSequenceTemporalSupportSeconds] = ...
+            demoEngine.scene.classicCRTstimulus(...
+                gratingParams, theMRGCmosaic, theOptics, visualizeStimulusSequence);
+
+
+        % Compute the retinal image for each stimulus frame
+        theRetinalImage = cell(1, numel(theSceneStimulusSequenceTemporalSupportSeconds));
+        parfor iFrame = 1:numel(theSceneStimulusSequenceTemporalSupportSeconds)
+            fprintf('Computing retinal images for stimulus frame %d of %d\n', iFrame, numel(theSceneStimulusSequenceTemporalSupportSeconds));
+            theRetinalImage{iFrame} = oiCompute(theOptics, theStimulusSceneSequence{iFrame},'pad value','mean');
+        end
+
+        % Set the integration time of the cone mosaic to the frame duration
+        % temporal resolution
+        theMRGCmosaic.inputConeMosaic.integrationTime = ...
+            theSceneStimulusSequenceTemporalSupportSeconds(2)-theSceneStimulusSequenceTemporalSupportSeconds(1);
+
+
+    else
+
+        % Load an HDR scene
+        [theScene, spatialSupportXdegs, spatialSupportYdegs] = demoEngine.scene.loadMachnesterDataBaseScene(...
+            HDRdatabaseYear, sprintf('%s.mat', HDRimageName));
+    
+        % Visualize scene and its luminance map
+        figNo = 1;
+        thePDFfileName = sprintf('%s_%d_%s_original.pdf', 'Manchester', HDRdatabaseYear, HDRimageName);
+        demoEngine.scene.visualizeHDR(theScene, spatialSupportXdegs, spatialSupportYdegs, sceneCropParams, figNo,...
+            exportVisualizationRootDirectory, ...
+            exportVisualizationPDFdirectory, ...
+            thePDFfileName);
+    
+        % Crop the scene
+        if (~isempty(sceneCropParams))
+            [theScene, spatialSupportXdegs, spatialSupportYdegs] = ...
+                demoEngine.scene.crop(theScene, spatialSupportXdegs, spatialSupportYdegs, ...
+                sceneCropParams);
+        end
+
+        % Visualize cropped scene and its luminance map
+        figNo = 2;
+        demoEngine.scene.visualizeHDR(theScene, spatialSupportXdegs, spatialSupportYdegs, [], figNo, ...
+            exportVisualizationRootDirectory, ...
+            exportVisualizationPDFdirectory, ...
+            sprintf('%s_%d_%s_cropped.pdf', 'Manchester', HDRdatabaseYear, HDRimageName));
+
+        % Compute the retinal image
+        theRetinalImage = oiCompute(theOptics,theScene,'pad value','mean');
+
+        % Set the integration time of the cone mosaic to the eye movement
+        % temporal resolution
+        theMRGCmosaic.inputConeMosaic.integrationTime = eyeMovementParams.temporalResolutionSeconds;
+
     end
 
-    % Visualize cropped scene and its luminance map
-    figNo = 2;
-    demoEngine.scene.visualizeHDR(theScene, spatialSupportXdegs, spatialSupportYdegs, [], figNo, ...
-        exportVisualizationRootDirectory, ...
-        exportVisualizationPDFdirectory, ...
-        sprintf('%s_%d_%s_cropped.pdf', 'Manchester', HDRdatabaseYear, HDRimageName));
-
-
-
-    % Compute the retinal image
-    theRetinalImage = oiCompute(theOptics,theScene,'pad value','mean');
-
-
-    theMRGCmosaic.inputConeMosaic.integrationTime = 5/1000;
-
-    % Instantiate a fixational eye movement object for generating
-    % fixational eye movements that include drift and microsaccades.
-    fixEMobj = fixationalEM();
-
-    % Generate microsaccades with a mean interval of  150 milliseconds
-    % Much more often than the default, just for video purposes.
-    fixEMobj.microSaccadeMeanIntervalSeconds = eyeMovementParams.microSaccadeMeanIntervalSeconds;
     
-    % Compute nTrials of emPaths for this mosaic
-    % Here we are fixing the random seed so as to reproduce identical eye
-    % movements whenever this script is run.
-    theFixationalEMObj = demoEngine.compute.fixationalEyeMovementPaths(...
-        eyeMovementParams.trialDurationSeconds, eyeMovementParams.nTrials, theMRGCmosaic.inputConeMosaic);
+    if (isstruct(HDRimageName))
 
+        % CRT modulated stimulus witout fixational eye movements
+        % Compute the cone mosaic excitation responses
 
-    % Compute the cone mosaic excitation responses
-    [theConeMosaicSpatioTemporalExcitationResponse, ~, ~, ~, theConeExcitationsResponseTemporalSupportSeconds] = ...
-            theMRGCmosaic.inputConeMosaic.compute(theRetinalImage, ...
-            'withFixationalEyeMovements', true);
+        % Compute the response to the first frame
+        theConeMosaicExcitationFrameResponse = theMRGCmosaic.inputConeMosaic.compute(theRetinalImage{1});
+
+        % Allocate memory for the responses to all the frames
+        theConeMosaicSpatioTemporalExcitationResponse = zeros(1, numel(theRetinalImage), size(theConeMosaicExcitationFrameResponse,3));
+        theConeMosaicSpatioTemporalExcitationResponse(1, 1, :) = theConeMosaicExcitationFrameResponse;
+
+        theConeExcitationsResponseTemporalSupportSeconds = theSceneStimulusSequenceTemporalSupportSeconds;
+
+        parfor iFrame = 2:numel(theRetinalImage)
+            fprintf('Computing cone mosaic excitations response for frame %d of %d\n', iFrame, numel(theRetinalImage))
+            theConeMosaicSpatioTemporalExcitationResponse(1, iFrame, :) = ...
+                theMRGCmosaic.inputConeMosaic.compute(theRetinalImage{iFrame});
+        end
+
+    else
+        % HDR with fixational eye movements
+        % Instantiate a fixational eye movement object for generating
+        % fixational eye movements that include drift and microsaccades.
+        fixEMobj = fixationalEM();
+    
+        % Generate microsaccades with a mean interval of  150 milliseconds
+        % Much more often than the default, just for video purposes.
+        fixEMobj.microSaccadeMeanIntervalSeconds = eyeMovementParams.microSaccadeMeanIntervalSeconds;
+        
+        % Compute nTrials of emPaths for this mosaic
+        % Here we are fixing the random seed so as to reproduce identical eye
+        % movements whenever this script is run.
+        theFixationalEMObj = demoEngine.compute.fixationalEyeMovementPaths(...
+            eyeMovementParams.trialDurationSeconds, eyeMovementParams.nTrials, ...
+            theMRGCmosaic.inputConeMosaic, ...
+            eyeMovementParams.randomNumberGeneratorSeed);
+    
+    
+        % Compute the cone mosaic excitation responses
+        [theConeMosaicSpatioTemporalExcitationResponse, ~, ~, ~, theConeExcitationsResponseTemporalSupportSeconds] = ...
+                theMRGCmosaic.inputConeMosaic.compute(theRetinalImage, ...
+                'withFixationalEyeMovements', true);
+    end
+
 
 
     % Compute mean cone excitation rates.
@@ -114,6 +170,7 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
     save(theDataFileName, ...
         'theMRGCmosaic', ...
         'sceneCropParams', ...
+        'gratingParams', ...
         'theConeMosaicSpatioTemporalExcitationResponse', ...
         'theConeExcitationsResponseTemporalSupportSeconds', ...
         'theScene', 'theRetinalImage', 'theFixationalEMObj', ...
@@ -130,6 +187,7 @@ function [theConeMosaicSpatioTemporalPhotocurrentResponses, ...
     theConeMosaicSpatioTemporalExcitationResponse, ...
     photocurrentParams)
 
+    fprintf('Computing photocurrent responses');
 
     % Allocate memory for each cone mosaic OS biophys model
     nTrials = size(theConeMosaicSpatioTemporalExcitationResponse,1);

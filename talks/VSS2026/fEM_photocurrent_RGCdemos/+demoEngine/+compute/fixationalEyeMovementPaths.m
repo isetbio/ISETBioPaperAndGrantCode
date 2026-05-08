@@ -1,7 +1,7 @@
 %
 % demoEngine.compute.fixationalEyeMovementPaths
 %
-function fixationalEMObj = fixationalEyeMovementPaths(trialDurationSeconds, nTrials, theConeMosaic)
+function fixationalEMObj = fixationalEyeMovementPaths(trialDurationSeconds, nTrials, theConeMosaic, randomNumberGeneratorSeed)
     % Initialize
     fixationalEMObj = fixationalEM;              % Instantiate a fixationalEM object
 
@@ -18,7 +18,8 @@ function fixationalEMObj = fixationalEyeMovementPaths(trialDurationSeconds, nTri
     % which results in a time step equal to the integration time of theConeMosaic
     fixationalEMObj.computeForCmosaic(...
         theConeMosaic, eyeMovementsPerTrial,...
-        'nTrials' , nTrials);
+        'nTrials' , nTrials, ...
+        'rSeed', randomNumberGeneratorSeed)
 
     % Set the fixational eye movements into the cone mosaic
     theConeMosaic.emSetFixationalEMObj(fixationalEMObj);
