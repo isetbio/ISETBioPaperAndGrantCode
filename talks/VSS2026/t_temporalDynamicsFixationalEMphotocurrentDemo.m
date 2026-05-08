@@ -13,7 +13,7 @@ function t_temporalDynamicsFixationalEMphotocurrentDemo(options)
     % mRGCMosaic crop params
     % The input cone mosaic is much larger
     cropParams = struct( ...
-        'sizeDegs', [0.75 0.5], ...
+        'sizeDegs', [0.25 0.25], ...
         'eccentricityDegs', [-6 0]);
 
     % No cropping
@@ -29,8 +29,8 @@ function t_temporalDynamicsFixationalEMphotocurrentDemo(options)
     sceneCropParams = struct(...
         'positionDegs', [0.5 -1], ...
         'sizeDegs', [7 7], ...          % grab a 6x6 patch,
-        'imageFOVdegs', 3.0, ...        % scale it to a 3x3 patch
-        'meanLuminanceCdM2', 15 ...     % and asdjust its mean luminance
+        'imageFOVdegs', 3.0, ...        % scale it to a 1x1 patch
+        'meanLuminanceCdM2', 30 ...     % and asdjust its mean luminance
     );
     % -====================================================================
 
@@ -40,6 +40,14 @@ function t_temporalDynamicsFixationalEMphotocurrentDemo(options)
     % Distant forest, luminance range: 17-230 (mean: 10)
     HDRdatabaseYear = 2004
     HDRimageName = 'scene1';
+    sceneCropParams = struct(...
+        'positionDegs', [1 0], ...
+        'sizeDegs', [4 4], ...          % grab a 6x6 patch,
+        'imageFOVdegs', 2.0, ...        % scale it to a 1x1 patch
+        'meanLuminanceCdM2', 30 ...     % and asdjust its mean luminance
+    );
+
+
 
     % Garden with central flower, luminance range: 34-417 (mean 30)
     HDRimageName = 'scene3';
@@ -72,15 +80,36 @@ function t_temporalDynamicsFixationalEMphotocurrentDemo(options)
         'osBiophysicalModelTemporalResolutionSeconds',  1e-5, ...
         'temporalResolutionSeconds', 1/1000);
 
+    eyeMovementParams = struct(...
+        'microSaccadeMeanIntervalSeconds', 250/1000,...
+        'trialDurationSeconds', 5.0, ...
+        'nTrials', 1);
+
+    recomputeInputConeMosaicSimulation = ~true;
+    recomputeMRGCmosaicSimulation = ~true;
+
+    % Where to load the derived inner retina filters
+    mRGCtemporalFiltersSources = struct(...
+        'rootDir', fullfile(localDropboxDir(),'IBIO_rgcMosaicResources/denovo/intermediateFiles/ONcenterMidgetRGCmosaics/TTFresponses'),...
+        'derivedInnerRetinaImpulseResponseCenterDataFile', 'IR30_Fig6_(ON)_cnt_direct_spot_Achromatic@0.5C_40CdM2.mat',...
+        'derivedInnerRetinaImpulseResponseSurroundDataFile', 'IR30_Fig6_(ON)_srnd_direct_annulus_Achromatic@0.5C_40CdM2.mat'...
+    );
+
     t_temporalDynamicsFixationalEMphotocurrentDemo(...
         'cropParams', cropParams, ...
         'sceneCropParams', sceneCropParams, ...
         'HDRdatabaseYear', HDRdatabaseYear, ...
         'HDRimageName', HDRimageName, ...
         'photocurrentParams', photocurrentParams, ...
+        'eyeMovementParams', eyeMovementParams, ...
         'rgcMosaicName', 'JCNpaperTemporal7DegsMosaic', ...
         'opticsSubjectName', 'JCNpaperDefaultSubject', ...
-        'visualizeMRGCmosaic',~true);
+        'visualizeMRGCmosaic',true, ...
+        'recomputeInputConeMosaicSimulation', recomputeInputConeMosaicSimulation, ...
+        'recomputeMRGCmosaicSimulation', recomputeMRGCmosaicSimulation, ...
+        'mRGCtemporalFiltersSources', mRGCtemporalFiltersSources, ...
+        'visualizeResponsesOfInputConesToRGCindex', 30)
+
         
 
 %}
@@ -165,11 +194,19 @@ arguments
         'osBiophysicalModelTemporalResolutionSeconds',  1e-5, ...
         'temporalResolutionSeconds', 1/1000);
 
-    
+    options.eyeMovementParams (1,1) = struct(...
+        'microSaccadeMeanIntervalSeconds', 250/1000,...
+        'trialDurationSeconds', 5.0, ...
+        'nTrials', 1);
+
+
     % Nonlinearities
     options.mRGCNonLinearityParamsStruct = [];
     options.mRGCsOperateOnBackgroundAdaptedPhotocurrents (1,1) logical = true;
 
+
+    % mRGC temporal filters source file
+    options.mRGCtemporalFiltersSources = [];
 
     % Source HDR image
     options.HDRdatabaseYear (1,:) double =  2004;
@@ -178,14 +215,11 @@ arguments
     % Visualizations
     options.visualizeMRGCmosaic (1,1) logical = false;
 
-    % ---- Choices of actions to perform ----
-    % Whether to compute the input cone mosaic TTF responses
-    options.computeInputConeMosaicResponses (1,1) logical = false;
-    options.computeInputConeMosaicResponsesBasedOnConeExcitations (1,1) logical = true;
-    options.computeInputConeMosaicResponsesBasedOnPhotocurrents (1,1) logical = true;
-    options.computePhotocurrentResponsesOnlyForInputsToSingleRGCwithIndex (1,:) double = [];
+    options.visualizeResponsesOfInputConesToRGCindex (1,:) double = [];
 
-    options.computeMRGCMosaicResponses (1,1) logical = false;
+    % ---- Choices of actions to perform ----
+    options.recomputeInputConeMosaicSimulation (1,1) logical = false;
+    options.recomputeMRGCmosaicSimulation (1,1) logical = false;
 
 
     % Whether to close previously open figures
@@ -195,255 +229,163 @@ arguments
     options.exportVisualizationPNG (1,1) logical = false;
 end
 
-% Set flags from key/value pairs
-
-% Mosaic specifiers for selecting a prebaked mRGC mosaic
-rgcMosaicName = options.rgcMosaicName;
-coneMosaicSpecies = options.coneMosaicSpecies;
-opticsSubjectName = options.opticsSubjectName;
-targetVisualSTFdescriptor = options.targetVisualSTFdescriptor;
-
-% Mosaic cropping
-cropParams = options.cropParams;
-sceneCropParams = options.sceneCropParams;
-
-% Optics to employ for the computations
-opticsForTTFresponses = options.opticsForTTFresponses;
-opticsWavefrontSpatialSamples = options.opticsWavefrontSpatialSamples;
-
-% Display params
-meanLuminanceCdM2 = options.meanLuminanceCdM2;
-displayType = options.displayType;
-displayLuminanceHeadroomPercentage = options.displayLuminanceHeadroomPercentage;
-coneFundamentalsOptimizedForStimPosition = options.coneFundamentalsOptimizedForStimPosition;
-adjustBackgroundChromaticityToEqualizeLandMconeExcitations = options.adjustBackgroundChromaticityToEqualizeLandMconeExcitations;
-
-% Spatial params
-stimulusPixelSizeAsFractionOfConeAperture = options.stimulusPixelSizeAsFractionOfConeAperture;
-stimulusMaxSupportDegs = options.stimulusMaxSupportDegs;
-stimulusPositionDegs = options.stimulusPositionDegs;
-stimulusSizeDegs =  options.stimulusSizeDegs;
-
-
-% Photocurrent params
-photocurrentParams = options.photocurrentParams;
-
-mRGCsOperateOnBackgroundAdaptedPhotocurrents = options.mRGCsOperateOnBackgroundAdaptedPhotocurrents;
-
-% Nonlinearities
-mRGCNonLinearityParamsStruct = options.mRGCNonLinearityParamsStruct;
-
-
-% Source HDR image
-HDRdatabaseYear = options.HDRdatabaseYear;
-HDRimageName = options.HDRimageName;
-
-
-% Visualizations
-visualizeMRGCmosaic = options.visualizeMRGCmosaic;
-exportVisualizationPDF = options.exportVisualizationPDF;
-exportVisualizationPNG = options.exportVisualizationPNG;
-
-% Close previously open figures
-closePreviouslyOpenFigures = options.closePreviouslyOpenFigures;
-
-if (closePreviouslyOpenFigures)
-    % Close any stray figs
-    close all;
-end
-
-% Load the mRGCmosaic specified by the passed parameters:
-%   coneMosaicSpecies, opticsSubjectName, rgcMosaicName, targetVisualSTFdescriptor
-% and generate the optics that were used to synthesize the mosaic
-[theMRGCmosaic, theOptics, thePSFatTheMosaicEccentricity] = mRGCMosaic.loadPrebakedMosaic(...
-        coneMosaicSpecies, opticsSubjectName, rgcMosaicName, targetVisualSTFdescriptor, ...
-        'computeTheMosaicOptics', true, ...
-        'opticsToEmploy', opticsForTTFresponses, ...
-        'wavefrontSpatialSamples', opticsWavefrontSpatialSamples, ...
-        'cropParams', cropParams);
-
-% Plot a smaller region of the mRGC mosaic with the PSF superimposed
-narrowDomainVisualizationLimits(1:2) = theMRGCmosaic.eccentricityDegs(1) + [-0.5 0.5]*theMRGCmosaic.sizeDegs(1);
-narrowDomainVisualizationLimits(3:4) = theMRGCmosaic.eccentricityDegs(2) + [-0.5 0.5]*theMRGCmosaic.sizeDegs(2);
-narrowDomainVisualizationTicks = struct(...
-    'x', -30:0.2:0, ...
-    'y', -10:0.2:10);
-
-% Generate figure dir if it does not exist
-exportVisualizationRootDirectory = ISETBioPaperAndGrantCodeFigureDirForScript(mfilename);
-exportVisualizationPDFdirectory = 'staticPDFs';
-exportVisualizationVideoDirectory = 'videos';
-
-
-if (visualizeMRGCmosaic)
-    fancyMosaicVisualization(theMRGCmosaic, thePSFatTheMosaicEccentricity, ...
-        narrowDomainVisualizationLimits, ...
-        narrowDomainVisualizationTicks, ...
-        exportVisualizationRootDirectory, ...
-        exportVisualizationPDFdirectory);
-end
-
-
-% Load an HDR scene
-[theScene, spatialSupportXdegs, spatialSupportYdegs] = loadMachnesterDataBaseScene(...
-    HDRdatabaseYear, sprintf('%s.mat', HDRimageName));
-
-% Visualize scene and its luminance map
-figNo = 1;
-thePDFfileName = sprintf('%s_%d_%s_original.pdf', 'Manchester', HDRdatabaseYear, HDRimageName);
-visualizeHDRscene(theScene, spatialSupportXdegs, spatialSupportYdegs, sceneCropParams, figNo,...
-    exportVisualizationRootDirectory, ...
-    exportVisualizationPDFdirectory, ...
-    thePDFfileName);
-
-% Crop the scene
-if (~isempty(sceneCropParams))
-    [theScene, spatialSupportXdegs, spatialSupportYdegs] = ...
-        cropScene(theScene, spatialSupportXdegs, spatialSupportYdegs, ...
-        sceneCropParams);
-
-
-    % Visualize cropped scene and its luminance map
-    figNo = 2;
-    visualizeHDRscene(theScene, spatialSupportXdegs, spatialSupportYdegs, [], figNo, ...
-        exportVisualizationRootDirectory, ...
-        exportVisualizationPDFdirectory, ...
-        sprintf('%s_%d_%s_cropped.pdf', 'Manchester', HDRdatabaseYear, HDRimageName));
-end
-
-
-% Compute the retinal image
-theRetinalImage = oiCompute(theOptics,theScene,'pad value','mean');
-
-
-theMRGCmosaic.inputConeMosaic.integrationTime = 5/1000;
-
-% Instantiate a fixational eye movement object for generating
-% fixational eye movements that include drift and microsaccades.
-fixEMobj = fixationalEM();
-
-% Generate microsaccades with a mean interval of  150 milliseconds
-% Much more often than the default, just for video purposes.
-fixEMobj.microSaccadeMeanIntervalSeconds = 0.150;
-
-% Compute nTrials of emPaths for this mosaic
-% Here we are fixing the random seed so as to reproduce identical eye
-% movements whenever this script is run.
-nTrials = 1;
-trialDurationSeconds = 5.0;
-
-theFixationalEMObj = generateFixationalEyeMovements(...
-    trialDurationSeconds, nTrials, theMRGCmosaic.inputConeMosaic);
-
-
-% Compute the cone mosaic excitation responses
-[theConeMosaicSpatioTemporalExcitationResponse, ~, ~, ~, theConeExcitationsResponseTemporalSupportSeconds] = ...
-        theMRGCmosaic.inputConeMosaic.compute(theRetinalImage, ...
-        'withFixationalEyeMovements', true);
-
-
-% Compute mean cone excitation rates.
-% Must be < 30,000 R*/sec to avoid significant bleaching
-meanConeExcitationRates = mean(theConeMosaicSpatioTemporalExcitationResponse,2)/ theMRGCmosaic.inputConeMosaic.integrationTime;
-
-maxConeExcitationRates = max(theConeMosaicSpatioTemporalExcitationResponse,2)/ theMRGCmosaic.inputConeMosaic.integrationTime;
-
-fprintf('Range of mean cone excitation rates: %f - %f (R*/sec) * 10000 \n', min(meanConeExcitationRates(:))/1e3, max(meanConeExcitationRates(:))/1e3);
-fprintf('Range of max cone excitation rates: %f - %f (R*/sec) * 10000 \n', min(maxConeExcitationRates(:))/1e3, max(maxConeExcitationRates(:))/1e3);
-
-
-if (max(meanConeExcitationRates) > 30*1000)
-    error('some mean cone excitation rates were > 30000')
-end
-
-
-
-% Compute the photocurrents
-
-% Allocate memory for each cone mosaic OS biophys model
-nCones = size(theConeMosaicSpatioTemporalExcitationResponse,3);
-theConeOSbiophysModels = cell(1,nCones);
-
-eccentricityDegsOfOSbiophysicalModel = sqrt(sum(theMRGCmosaic.inputConeMosaic.eccentricityDegs(:).^2));
-
-
-skipAssertions = false;
-iCone = 1;
-iTrial = 1;
-% Retrieve this cone's excitations count response 
-theSingleConeExcitationCountsResponse = squeeze(theConeMosaicSpatioTemporalExcitationResponse(iTrial,:,iCone));
-
-% Convert it to a cone excitation rate response
-theSingleConeExcitationRateResponse = theSingleConeExcitationCountsResponse(:) / theMRGCmosaic.inputConeMosaic.integrationTime;
-
-% Compute the cone's mean excitation rate over the entire course of stimulation
-theSingleConeBackgroundConeExcitationRate = mean(theSingleConeExcitationRateResponse);
-
-% Compute the first cone's photocurrent response just to get the number of time
-% bins and also conduct the assertions
-[~, thePhotocurrentResponseTemporalSupportSeconds] = cMosaic.photocurrentFromConeExcitationRateUsingBiophysicalOSmodel(...
-    eccentricityDegsOfOSbiophysicalModel, ...
-    theSingleConeExcitationRateResponse, ...
-    theSingleConeBackgroundConeExcitationRate, ...
-    theMRGCmosaic.inputConeMosaic.integrationTime, ...  % the timebase of the cone excitation rate signal
-    photocurrentParams.temporalResolutionSeconds,  ...  % the timebase of the returned photocurrent signal
-    'osTimeStepSeconds', photocurrentParams.osBiophysicalModelTemporalResolutionSeconds, ...  % the time base for running the osBiophysical model
-    'skipAssertions', skipAssertions, ...
-    'theConeOSbiophysModel', theConeOSbiophysModels{iCone});
-
-
-% Allocate memory for the cone mosaic photocurrent response
-theConeMosaicSpatioTemporalPhotocurrentResponses = zeros(nTrials, numel(thePhotocurrentResponseTemporalSupportSeconds), nCones);
-
-skipAssertions = true;
-
-for iTrial = 1:nTrials
-    parfor iCone = 1:nCones
+    % Set flags from key/value pairs
     
-        fprintf('Computing photocurrent for cone %d of %d (trial: %d of %d)\n', iCone, nCones, iTrial, nTrials);
-        % Retrieve this cone's excitations count response 
-        theSingleConeExcitationCountsResponse = squeeze(theConeMosaicSpatioTemporalExcitationResponse(iTrial,:,iCone));
+    % Mosaic specifiers for selecting a prebaked mRGC mosaic
+    rgcMosaicName = options.rgcMosaicName;
+    coneMosaicSpecies = options.coneMosaicSpecies;
+    opticsSubjectName = options.opticsSubjectName;
+    targetVisualSTFdescriptor = options.targetVisualSTFdescriptor;
     
-        % Convert it to a cone excitation rate response
-        theSingleConeExcitationRateResponse = theSingleConeExcitationCountsResponse(:) / theMRGCmosaic.inputConeMosaic.integrationTime;
+    % Mosaic cropping
+    cropParams = options.cropParams;
+    sceneCropParams = options.sceneCropParams;
     
-        % Compute the cone's mean excitation rate over the entire course of stimulation
-        theSingleConeBackgroundConeExcitationRate = mean(theSingleConeExcitationRateResponse);
+    % Optics to employ for the computations
+    opticsForTTFresponses = options.opticsForTTFresponses;
+    opticsWavefrontSpatialSamples = options.opticsWavefrontSpatialSamples;
     
-        % Compute the cone's photocurrent response
-        [theSingleConePhotocurrentDifferentialResponse, ~, ...
-         theSingleConePhotocurrentBackgroundTransientResponse, ...
-         theConeOSbiophysModels{iCone}] = cMosaic.photocurrentFromConeExcitationRateUsingBiophysicalOSmodel(...
-                eccentricityDegsOfOSbiophysicalModel, ...
-                theSingleConeExcitationRateResponse, ...
-                theSingleConeBackgroundConeExcitationRate, ...
-                theMRGCmosaic.inputConeMosaic.integrationTime, ...  % the timebase of the cone excitation rate signal
-                photocurrentParams.temporalResolutionSeconds,  ...  % the timebase of the returned photocurrent signal
-                'osTimeStepSeconds', photocurrentParams.osBiophysicalModelTemporalResolutionSeconds, ...  % the time base for running the osBiophysical model
-                'skipAssertions', skipAssertions, ...
-                'theConeOSbiophysModel', theConeOSbiophysModels{iCone});
-        
-        theConeMosaicSpatioTemporalPhotocurrentResponses(iTrial,:,iCone) = theSingleConePhotocurrentDifferentialResponse;
+    % Display params
+    meanLuminanceCdM2 = options.meanLuminanceCdM2;
+    displayType = options.displayType;
+    displayLuminanceHeadroomPercentage = options.displayLuminanceHeadroomPercentage;
+    coneFundamentalsOptimizedForStimPosition = options.coneFundamentalsOptimizedForStimPosition;
+    adjustBackgroundChromaticityToEqualizeLandMconeExcitations = options.adjustBackgroundChromaticityToEqualizeLandMconeExcitations;
+    
+    % Spatial params
+    stimulusPixelSizeAsFractionOfConeAperture = options.stimulusPixelSizeAsFractionOfConeAperture;
+    stimulusMaxSupportDegs = options.stimulusMaxSupportDegs;
+    stimulusPositionDegs = options.stimulusPositionDegs;
+    stimulusSizeDegs =  options.stimulusSizeDegs;
+    
+    
+    % Photocurrent params
+    photocurrentParams = options.photocurrentParams;
+    
+    % Eye movement params
+    eyeMovementParams = options.eyeMovementParams;
+
+
+    mRGCsOperateOnBackgroundAdaptedPhotocurrents = options.mRGCsOperateOnBackgroundAdaptedPhotocurrents;
+    
+    % Nonlinearities
+    mRGCNonLinearityParamsStruct = options.mRGCNonLinearityParamsStruct;
+    
+    % mRGC filter sources
+    mRGCtemporalFiltersSources = options.mRGCtemporalFiltersSources; 
+
+    % Source HDR image
+    HDRdatabaseYear = options.HDRdatabaseYear;
+    HDRimageName = options.HDRimageName;
+    
+    recomputeInputConeMosaicSimulation = options.recomputeInputConeMosaicSimulation;
+    recomputeMRGCmosaicSimulation = options.recomputeMRGCmosaicSimulation;
+
+
+    % Visualizations
+    visualizeMRGCmosaic = options.visualizeMRGCmosaic;
+    visualizeResponsesOfInputConesToRGCindex = options.visualizeResponsesOfInputConesToRGCindex;
+
+    exportVisualizationPDF = options.exportVisualizationPDF;
+    exportVisualizationPNG = options.exportVisualizationPNG;
+    
+    % Close previously open figures
+    closePreviouslyOpenFigures = options.closePreviouslyOpenFigures;
+    
+    if (closePreviouslyOpenFigures)
+        % Close any stray figs
+        close all;
     end
+    
+    exportVisualizationRootDirectory = ISETBioPaperAndGrantCodeFigureDirForScript(mfilename);
+    exportVisualizationPDFdirectory = 'staticPDFs';
+    exportVisualizationVideoDirectory = 'videos';
+    exportDataDirectory = 'data';
+
+    theDataFileName = sprintf('alldata_%2.0fCdM2.mat', sceneCropParams.meanLuminanceCdM2);
+
+
+    if (recomputeInputConeMosaicSimulation)
+        runTheInputConeMosaicSimulation(coneMosaicSpecies, opticsSubjectName, rgcMosaicName, targetVisualSTFdescriptor, ...
+            opticsForTTFresponses, opticsWavefrontSpatialSamples, cropParams, sceneCropParams, ...
+            photocurrentParams, eyeMovementParams, HDRdatabaseYear, HDRimageName, ...
+            visualizeMRGCmosaic, ...
+            exportVisualizationRootDirectory, exportVisualizationPDFdirectory, ...
+            exportVisualizationVideoDirectory, exportDataDirectory, theDataFileName);
+    end
+
+    if (recomputeMRGCmosaicSimulation)
+        runTheMRGCmosaicSimulation(theDataFileName, mRGCtemporalFiltersSources, ...
+            exportVisualizationRootDirectory, exportVisualizationPDFdirectory, ...
+            exportVisualizationVideoDirectory, exportDataDirectory, ...
+            visualizeResponsesOfInputConesToRGCindex);
+    end
+
+    % Video
+    visualizeTheData(theDataFileName, visualizeResponsesOfInputConesToRGCindex, ...
+            exportVisualizationRootDirectory, exportVisualizationPDFdirectory, ...
+            exportVisualizationVideoDirectory, exportDataDirectory, ...
+            visualizeResponsesOfInputConesToRGCindex);
+   
 end
 
-save('alldata.mat', ...
-    'theMRGCmosaic', ...
-    'theConeMosaicSpatioTemporalExcitationResponse', ...
-    'theConeExcitationsResponseTemporalSupportSeconds', ...
-    'theScene', 'theRetinalImage', 'theFixationalEMObj', ...
-    'theConeMosaicSpatioTemporalPhotocurrentResponses', ...
-    'thePhotocurrentResponseTemporalSupportSeconds', ...
-    '-v7.3');
 
-fprintf('Saved everything to alldata.mat');
+function visualizeTheData(theDataFileName, visualizeResponsesOfInputConesToRGCindex, ...
+            exportVisualizationRootDirectory, exportVisualizationPDFdirectory, ...
+            exportVisualizationVideoDirectory, exportDataDirectory, targetMRGCindex)
+    
+    % Load the data
+    theDataFileName = fullfile(exportVisualizationRootDirectory, exportDataDirectory, theDataFileName);
+    load(theDataFileName, ...
+        'theMRGCmosaic', ...
+        'theConeMosaicSpatioTemporalExcitationResponse', ...
+        'theConeExcitationsResponseTemporalSupportSeconds', ...
+        'theScene', 'sceneCropParams', 'theRetinalImage', 'theFixationalEMObj', ...
+        'theConeMosaicSpatioTemporalPhotocurrentResponses', ...
+        'thePhotocurrentResponseTemporalSupportSeconds', ...
+        'theMRGCmosaicResponseDictionary');
+    
 
-radii = sqrt(sum((bsxfun(@minus, theMRGCmosaic.inputConeMosaic.coneRFpositionsDegs, theMRGCmosaic.inputConeMosaic.eccentricityDegs)).^2,2));
-coneIndicesToVisualize = find(radii < 0.2);
+    visualizeMRGCtraces(theMRGCmosaicResponseDictionary, targetMRGCindex, ...
+        exportVisualizationRootDirectory, exportVisualizationPDFdirectory, sprintf('mRGCresponseTraces_%2.0fCdM2.pdf', sceneCropParams.meanLuminanceCdM2));
 
-theMRGCmosaic.inputConeMosaic.visualize(...
-    'outlinedconeswithindices', coneIndicesToVisualize);
+    visualizeConeExcitationsStimulusModulationAndFixationalEMs(...
+        theMRGCmosaicResponseDictionary, targetMRGCindex, ...
+        theMRGCmosaic.inputConeMosaic, ...
+        theConeMosaicSpatioTemporalPhotocurrentResponses, ...
+        thePhotocurrentResponseTemporalSupportSeconds, ...
+        theRetinalImage, theFixationalEMObj, ...
+        exportVisualizationRootDirectory, ...
+        exportVisualizationVideoDirectory, ...
+        sprintf('photoCurrentsMovie_%2.0fCdM2.pdf', sceneCropParams.meanLuminanceCdM2));
 
+    visualizeConeExcitationsStimulusModulationAndFixationalEMs(...
+        theMRGCmosaicResponseDictionary, targetMRGCindex, ...
+        theMRGCmosaic.inputConeMosaic, ...
+        theConeMosaicSpatioTemporalExcitationResponse, ...
+        theConeExcitationsResponseTemporalSupportSeconds, ...
+        theRetinalImage, theFixationalEMObj, ...
+        exportVisualizationRootDirectory, ...
+        exportVisualizationVideoDirectory, ...
+        sprintf('coneExcitationsMovie_%2.0fCdM2.pdf', sceneCropParams.meanLuminanceCdM2));
+
+
+    if (~isempty(visualizeResponsesOfInputConesToRGCindex))
+        % Compute photocurrents for cone indices that provide input to a single mRGC
+        theTargetMRGCindex = visualizeResponsesOfInputConesToRGCindex(1);
+
+        surroundConnectivityVector = full(squeeze(theMRGCmosaic.rgcRFsurroundConeConnectivityMatrix(:, theTargetMRGCindex)));
+        surroundConeIndices = find(surroundConnectivityVector > theMRGCmosaic.minSurroundWeightForInclusionInComputing);
+        coneIndicesToVisualize = surroundConeIndices;
+    else
+        coneIndicesToVisualize = 1:theMRGCmosaic.inputConeMosaic.conesNum;
+    end
+
+
+    theMRGCmosaic.inputConeMosaic.visualize(...
+        'outlinedconeswithindices', coneIndicesToVisualize);
+
+   
 
 for idx = 1:numel(coneIndicesToVisualize)
 
@@ -512,23 +454,688 @@ for idx = 1:numel(coneIndicesToVisualize)
     set(ax2, 'XTick', 0:0.5:5);
     ylabel(ax2, 'differential photocurrent (pAmps)');
 
-    pause
+    
 
 end % iCone
 
 
 
-% Visualize
-theVideoFilename = sprintf('coneExcitationsfEMretinalImageCombo_%s',strrep(thePDFfileName, '/.pdf', ''));
+    % Visualize
+    theVideoFilename = sprintf('coneExcitationsfEMretinalImageCombo_%s',strrep(thePDFfileName, '/.pdf', ''));
+    
+    visualizeConeExcitationsStimulusModulationAndFixationalEMs(...
+        theMRGCmosaic.inputConeMosaic, theConeMosaicSpatioTemporalExcitationResponse, ...
+        theConeExcitationsResponseTemporalSupportSeconds, ...
+        theRetinalImage, theFixationalEMObj, ...
+        exportVisualizationRootDirectory, ...
+        exportVisualizationVideoDirectory, ...
+        theVideoFilename);
 
-visualizeConeExcitationsStimulusModulationAndFixationalEMs(...
-    theMRGCmosaic.inputConeMosaic, theConeMosaicSpatioTemporalExcitationResponse, ...
-    theConeExcitationsResponseTemporalSupportSeconds, ...
-    theRetinalImage, theFixationalEMObj, ...
-    exportVisualizationRootDirectory, ...
-    exportVisualizationVideoDirectory, ...
-    theVideoFilename);
+end
 
+
+function runTheMRGCmosaicSimulation(theDataFileName, mRGCtemporalFiltersSources, exportVisualizationRootDirectory, exportVisualizationPDFdirectory, ...
+            exportVisualizationVideoDirectory, exportDataDirectory, theTargetmRGCindex)
+    
+    % Load the mRGC temporal filters
+    theSourceFile = fullfile(...
+        mRGCtemporalFiltersSources.rootDir, mRGCtemporalFiltersSources.derivedInnerRetinaImpulseResponseCenterDataFile);
+    d = load(theSourceFile, 'theDerivedInnerRetinaFiniteTimeImpulseResponseData');
+    innerRetinaCenterImpulseResponseData = d.theDerivedInnerRetinaFiniteTimeImpulseResponseData;
+    
+
+    theSourceFile = fullfile(...
+        mRGCtemporalFiltersSources.rootDir, mRGCtemporalFiltersSources.derivedInnerRetinaImpulseResponseSurroundDataFile);
+    d = load(theSourceFile, 'theDerivedInnerRetinaFiniteTimeImpulseResponseData');
+    innerRetinaSurroundImpulseResponseData = d.theDerivedInnerRetinaFiniteTimeImpulseResponseData;
+
+
+    assert(all(abs(innerRetinaCenterImpulseResponseData.temporalSupportSeconds(:)-innerRetinaSurroundImpulseResponseData.temporalSupportSeconds(:)))<10*eps, ...
+        'temporal supports of center and surround do not match');
+
+    % Normalize to unit peak amplitude
+    innerRetinaCenterImpulseResponseData.amplitude = innerRetinaCenterImpulseResponseData.amplitude / max(abs(innerRetinaCenterImpulseResponseData.amplitude(:)));
+    innerRetinaSurroundImpulseResponseData.amplitude = innerRetinaSurroundImpulseResponseData.amplitude / max(abs(innerRetinaSurroundImpulseResponseData.amplitude(:)));
+    
+
+    innerRetinaTemporalFilters = struct(...
+        'temporalSupportSeconds', innerRetinaCenterImpulseResponseData.temporalSupportSeconds, ...
+        'centerImpulseResponseFunction', innerRetinaCenterImpulseResponseData.amplitude, ...
+        'surroundImpulseResponseFunction', innerRetinaSurroundImpulseResponseData.amplitude);
+        
+    clear('innerRetinaSurroundImpulseResponseData', 'innerRetinaCenterImpulseResponseData');
+
+    figure(5555);
+    plot(innerRetinaTemporalFilters.temporalSupportSeconds, innerRetinaTemporalFilters.centerImpulseResponseFunction, 'r-', 'LineWidth', 1.5);
+    hold on;
+    plot(innerRetinaTemporalFilters.temporalSupportSeconds, innerRetinaTemporalFilters.surroundImpulseResponseFunction, 'b-', 'LineWidth', 1.5);
+    
+
+    temporalFrequencySupportHz = 0:0.5:200;
+    params = RGCmodels.BenardeteKaplan1997.figure6CenterSurroundFilterParams('ON');
+
+    theTargetCascadedFilterTTF = RGCmodels.BenardeteKaplan1997.oneStageHighPassNstageLowPassFilterCascadeTTF(...
+                params.centerIR.pVector, temporalFrequencySupportHz);
+    theCenterImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.sampledTTFtoTemporalImpulseFunction(...
+                    theTargetCascadedFilterTTF, temporalFrequencySupportHz, ...
+                    'causal', false, ...
+                    'upsample', 1);
+
+
+
+    theTargetCascadedFilterTTF = RGCmodels.BenardeteKaplan1997.oneStageHighPassNstageLowPassFilterCascadeTTF(...
+                params.surroundIR.pVector, temporalFrequencySupportHz);
+    theSurroundImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.sampledTTFtoTemporalImpulseFunction(...
+                    theTargetCascadedFilterTTF, temporalFrequencySupportHz, ...
+                    'causal', false, ...
+                    'upsample', 1);
+
+
+    centerAmplitude = interp1(theCenterImpulseResponseData.temporalSupportSeconds, theCenterImpulseResponseData.amplitude, innerRetinaTemporalFilters.temporalSupportSeconds);
+    surroundAmplitude = interp1(theSurroundImpulseResponseData.temporalSupportSeconds, theSurroundImpulseResponseData.amplitude, innerRetinaTemporalFilters.temporalSupportSeconds);
+
+    BenardeteKaplanFig6ONfilters = struct(...
+        'temporalSupportSeconds', innerRetinaTemporalFilters.temporalSupportSeconds, ...
+        'centerImpulseResponseFunction', centerAmplitude, ...
+        'surroundImpulseResponseFunction', surroundAmplitude);
+
+    figure(5556);
+    plot(BenardeteKaplanFig6ONfilters.temporalSupportSeconds, BenardeteKaplanFig6ONfilters.centerImpulseResponseFunction, 'r-', 'LineWidth', 1.5);
+    hold on;
+    plot(BenardeteKaplanFig6ONfilters.temporalSupportSeconds, BenardeteKaplanFig6ONfilters.surroundImpulseResponseFunction, 'b-', 'LineWidth', 1.5);
+    
+
+    % Load the data
+    theDataFileName = fullfile(exportVisualizationRootDirectory, exportDataDirectory, theDataFileName);
+    load(theDataFileName, ...
+        'theMRGCmosaic', ...
+        'theConeMosaicSpatioTemporalExcitationResponse', ...
+        'theConeExcitationsResponseTemporalSupportSeconds', ...
+        'theScene', 'theRetinalImage', 'theFixationalEMObj', ...
+        'theConeMosaicSpatioTemporalPhotocurrentResponses', ...
+        'thePhotocurrentResponseTemporalSupportSeconds');
+
+
+
+    % compute cone modulations from excitations
+    meanConeExcitations = mean(theConeMosaicSpatioTemporalExcitationResponse, 3);
+    theConeMosaicSpatioTemporalModulationsResponse = bsxfun(@times, bsxfun(@minus, theConeMosaicSpatioTemporalExcitationResponse, meanConeExcitations), 1./meanConeExcitations);
+
+
+    % Compute the mRGC mosaic response (cone excitations + no filtering)
+    [theMRGCmosaicResponse, ~, theMRGCMosaicResponseTemporalSupportSeconds] = ...
+        theMRGCmosaic.compute(...
+            theConeMosaicSpatioTemporalModulationsResponse, ...
+            theConeExcitationsResponseTemporalSupportSeconds);
+
+    theMRGCmosaicResponseDictionary = containers.Map();
+    theMRGCmosaicResponseDictionary('cone modulations alone') = struct(...
+        'theMRGCmosaicResponse', theMRGCmosaicResponse, ...
+        'theTemporalSupportSeconds', theMRGCMosaicResponseTemporalSupportSeconds);
+        
+
+    % Compute the mRGC mosaic response (cone excitations + no filtering) - OFF cell
+    theMRGCmosaicResponse = theMRGCmosaic.compute(...
+            theConeMosaicSpatioTemporalModulationsResponse, ...
+            theConeExcitationsResponseTemporalSupportSeconds, ...
+            'flipLinearResponsePolarityForCellsWithIndices', theTargetmRGCindex);
+
+    theMRGCmosaicResponseDictionary(sprintf('cone modulations alone (mRGC #%d with flipped polarity)', theTargetmRGCindex)) = struct(...
+        'theMRGCmosaicResponse', theMRGCmosaicResponse, ...
+        'theTemporalSupportSeconds', theMRGCMosaicResponseTemporalSupportSeconds);
+
+            
+
+    % Cone excitations + BK filter
+    [theMRGCmosaicResponse, ~, theMRGCMosaicResponseTemporalSupportSeconds] = ...
+        theMRGCmosaic.compute(...
+            theConeMosaicSpatioTemporalModulationsResponse, ...
+            theConeExcitationsResponseTemporalSupportSeconds, ...
+            'withCenterSurroundTemporalFilters', BenardeteKaplanFig6ONfilters);
+
+    theMRGCmosaicResponseDictionary('cone modulations + BK filters') = struct(...
+        'theMRGCmosaicResponse', theMRGCmosaicResponse, ...
+        'theTemporalSupportSeconds', theMRGCMosaicResponseTemporalSupportSeconds);
+
+
+
+
+    % Cone modulation + BK filter (OFF cell)
+    theMRGCmosaicResponse = theMRGCmosaic.compute(...
+            theConeMosaicSpatioTemporalModulationsResponse, ...
+            theConeExcitationsResponseTemporalSupportSeconds, ...
+            'withCenterSurroundTemporalFilters', BenardeteKaplanFig6ONfilters, ...
+            'flipLinearResponsePolarityForCellsWithIndices', theTargetmRGCindex);
+
+    theMRGCmosaicResponseDictionary(sprintf('cone modulations + BK filters (mRGC #%d with flipped polarity)', theTargetmRGCindex)) = struct(...
+        'theMRGCmosaicResponse', theMRGCmosaicResponse, ...
+        'theTemporalSupportSeconds', theMRGCMosaicResponseTemporalSupportSeconds);
+
+
+
+    % Compute the mRGC mosaic response (photocurrents - only)
+    [theMRGCmosaicResponse, ~, theMRGCMosaicResponseTemporalSupportSeconds] = ...
+        theMRGCmosaic.compute(...
+            theConeMosaicSpatioTemporalPhotocurrentResponses, ...
+            thePhotocurrentResponseTemporalSupportSeconds);
+
+    theMRGCmosaicResponseDictionary('photocurrents only') = struct(...
+        'theMRGCmosaicResponse', theMRGCmosaicResponse, ...
+        'theTemporalSupportSeconds', theMRGCMosaicResponseTemporalSupportSeconds);
+
+
+    % Compute the mRGC mosaic response (photocurrents - only) - OFF cell
+    theMRGCmosaicResponse = theMRGCmosaic.compute(...
+            theConeMosaicSpatioTemporalPhotocurrentResponses, ...
+            thePhotocurrentResponseTemporalSupportSeconds);
+
+    theMRGCmosaicResponseDictionary(sprintf('photocurrents only (mRGC #%d with flipped polarity)', theTargetmRGCindex)) = struct(...
+        'theMRGCmosaicResponse', theMRGCmosaicResponse, ...
+        'theTemporalSupportSeconds', theMRGCMosaicResponseTemporalSupportSeconds);
+
+
+    % Compute the mRGC mosaic response (photocurrents + inner retina filter)
+    [theMRGCmosaicResponse, ~, theMRGCMosaicResponseTemporalSupportSeconds] = ...
+        theMRGCmosaic.compute(...
+            theConeMosaicSpatioTemporalPhotocurrentResponses, ...
+            thePhotocurrentResponseTemporalSupportSeconds, ...
+            'withCenterSurroundTemporalFilters', innerRetinaTemporalFilters);
+
+    theMRGCmosaicResponseDictionary('photocurrents + inner retina filter cascade') = struct(...
+        'theMRGCmosaicResponse', theMRGCmosaicResponse, ...
+        'theTemporalSupportSeconds', theMRGCMosaicResponseTemporalSupportSeconds);
+
+
+    % Compute the mRGC mosaic response (photocurrents + inner retina filter) - OFF cell
+    theMRGCmosaicResponse = theMRGCmosaic.compute(...
+            theConeMosaicSpatioTemporalPhotocurrentResponses, ...
+            thePhotocurrentResponseTemporalSupportSeconds, ...
+            'withCenterSurroundTemporalFilters', innerRetinaTemporalFilters, ...
+            'flipLinearResponsePolarityForCellsWithIndices', theTargetmRGCindex);
+
+    theMRGCmosaicResponseDictionary(sprintf('photocurrents + inner retina filter cascade (mRGC #%d with flipped polarity)', theTargetmRGCindex)) = struct(...
+        'theMRGCmosaicResponse', theMRGCmosaicResponse, ...
+        'theTemporalSupportSeconds', theMRGCMosaicResponseTemporalSupportSeconds);
+
+
+
+
+    % Compute the mRGC mosaic response (photocurrents + inner retina filter, surround-only)
+    theMRGCmosaicResponse = theMRGCmosaic.compute(...
+            theConeMosaicSpatioTemporalPhotocurrentResponses, ...
+            thePhotocurrentResponseTemporalSupportSeconds, ...
+            'withCenterSurroundTemporalFilters', innerRetinaTemporalFilters, ...
+            'deactivatedCenter', true);
+
+    theMRGCmosaicResponseDictionary('photocurrents + inner retina filter cascade - surround only') = struct(...
+        'theMRGCmosaicResponse', theMRGCmosaicResponse, ...
+        'theTemporalSupportSeconds', theMRGCMosaicResponseTemporalSupportSeconds);
+
+
+
+    % Compute the mRGC mosaic response (photocurrents + inner retina filter, center-only)
+    theMRGCmosaicResponse = theMRGCmosaic.compute(...
+            theConeMosaicSpatioTemporalPhotocurrentResponses, ...
+            thePhotocurrentResponseTemporalSupportSeconds, ...
+            'withCenterSurroundTemporalFilters', innerRetinaTemporalFilters, ...
+            'deactivatedSurround', true);
+
+    theMRGCmosaicResponseDictionary('photocurrents + inner retina filter cascade - center only') = struct(...
+        'theMRGCmosaicResponse', theMRGCmosaicResponse, ...
+        'theTemporalSupportSeconds', theMRGCMosaicResponseTemporalSupportSeconds);
+
+
+
+    % Compute the mRGC mosaic response (cone modulations + inner retina
+    % filter) - CONTROL
+    [theMRGCmosaicResponse, ~, theMRGCMosaicResponseTemporalSupportSeconds] = ...
+        theMRGCmosaic.compute(...
+            theConeMosaicSpatioTemporalModulationsResponse, ...
+            theConeExcitationsResponseTemporalSupportSeconds, ...
+            'withCenterSurroundTemporalFilters', innerRetinaTemporalFilters);
+
+    theMRGCmosaicResponseDictionary('modulations + inner retina filter cascade') = struct(...
+        'theMRGCmosaicResponse', theMRGCmosaicResponse, ...
+        'theTemporalSupportSeconds', theMRGCMosaicResponseTemporalSupportSeconds);
+
+
+
+    % Append theMRGCmosaicResponseDictionary
+    save(theDataFileName, ...
+        'theMRGCmosaicResponseDictionary', ...
+        '-append');
+
+
+end
+
+
+function visualizeMRGCtraces(theMRGCmosaicResponseDictionary, targetRGCindex, ...
+    exportVisualizationRootDirectory, exportVisualizationPDFdirectory, thePDFfileName)
+
+
+    ff = PublicationReadyPlotLib.figureComponents('1x1 giant rectangular-double wide mosaic', ...
+        'darkScheme', true);
+
+    RedBlueLUT = zeros(1024,3);
+    RedBlueLUT(513,:) = ff.legendBackgroundColor;
+    RedBlueLUT(514:1024,1) = ff.legendBackgroundColor(1) + (1-ff.legendBackgroundColor(1))*(1:511)/511;
+    RedBlueLUT(514:1024,2) = ff.legendBackgroundColor(2);
+    RedBlueLUT(514:1024,3) = ff.legendBackgroundColor(3);
+
+    RedBlueLUT(512:-1:1,1) = ff.legendBackgroundColor(1);
+    RedBlueLUT(512:-1:1,2) = ff.legendBackgroundColor(2);
+    RedBlueLUT(512:-1:1,3) = ff.legendBackgroundColor(3) + (1-ff.legendBackgroundColor(3))*(1:512)/512;
+
+
+    if (1==2)
+        hFig = figure(5000); clf;
+        theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
+        ax = theAxes{1,1};
+    
+        [theTemporalSupportSeconds, theMRGCmosaicSpatioTemporalResponse] = retrieveTheSpatioTemporalMRGCmosaicResponses(...
+            theMRGCmosaicResponseDictionary, ...
+            'cone modulations + BK filters', ...
+             0,0, []);
+        
+    
+        mRGCsNum = size(theMRGCmosaicSpatioTemporalResponse,2);
+        imagesc(theTemporalSupportSeconds*1e3, 1:mRGCsNum, theMRGCmosaicSpatioTemporalResponse')
+    
+        timeLimits = [0 5.0*1e3];
+        yLims = [1 mRGCsNum];
+        set(ax, 'XLim', timeLimits, 'YLim', yLims, 'CLim', max(theMRGCmosaicSpatioTemporalResponse(:))*[-1 1]);
+        xlabel(ax, 'time (msec)');
+        ylabel(ax, 'mRGC index');
+        colormap(ax, RedBlueLUT)
+        colorbar(ax, 'east');
+    
+        PublicationReadyPlotLib.offsetAxes(ax,ff, timeLimits, yLims);
+        PublicationReadyPlotLib.applyFormat(ax,ff);
+    
+        % Export figure
+        theVisualizationPDFfilename = fullfile(exportVisualizationPDFdirectory, 'ConeModulations_BKfilters_XTresponse.pdf');
+                
+        % Generate the path if we need to
+        RGCMosaicConstructor.filepathFor.augmentedPathWithSubdirs(...
+              exportVisualizationRootDirectory, theVisualizationPDFfilename, ...
+              'generateMissingSubDirs', true);
+            
+        thePDFfileName = fullfile(exportVisualizationRootDirectory, theVisualizationPDFfilename);
+        NicePlot.exportFigToPDF(thePDFfileName, hFig, 300, 'beVerbose');
+
+
+
+    
+    
+        hFig = figure(5001); clf;
+        theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
+        ax = theAxes{1,1};
+    
+    
+        % Retrieve the data
+        [theTemporalSupportSeconds, theMRGCmosaicSpatioTemporalResponse] = retrieveTheSpatioTemporalMRGCmosaicResponses(...
+            theMRGCmosaicResponseDictionary, ...
+            'photocurrents + inner retina filter cascade', ...
+            0,0, []);
+    
+        mRGCsNum = size(theMRGCmosaicSpatioTemporalResponse,2);
+        imagesc(theTemporalSupportSeconds*1e3, 1:mRGCsNum, theMRGCmosaicSpatioTemporalResponse')
+    
+        timeLimits = [0 4000];
+        yLims = [1 mRGCsNum];
+        set(ax, 'XLim', timeLimits, 'YLim', yLims, 'CLim', max(theMRGCmosaicSpatioTemporalResponse(:))*[-1 1]);
+        xlabel(ax, 'time (msec)');
+        ylabel(ax, 'mRGC index');
+        colormap(ax, RedBlueLUT)
+        colorbar(ax, 'east');
+        PublicationReadyPlotLib.offsetAxes(ax,ff, timeLimits, yLims);
+        PublicationReadyPlotLib.applyFormat(ax,ff);
+    
+        % Export figure
+        theVisualizationPDFfilename = fullfile(exportVisualizationPDFdirectory, 'Photocurrents_InnerRetinaFilterCascade_XTresponse.pdf');
+                
+        % Generate the path if we need to
+        RGCMosaicConstructor.filepathFor.augmentedPathWithSubdirs(...
+              exportVisualizationRootDirectory, theVisualizationPDFfilename, ...
+              'generateMissingSubDirs', true);
+            
+        thePDFfileName = fullfile(exportVisualizationRootDirectory, theVisualizationPDFfilename);
+        NicePlot.exportFigToPDF(thePDFfileName, hFig, 300, 'beVerbose');
+    
+    
+    
+        hFig = figure(5002); clf;
+        theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
+        ax = theAxes{1,1};
+    
+        % Retrieve the data
+        [theTemporalSupportSeconds, theMRGCmosaicSpatioTemporalResponse] = retrieveTheSpatioTemporalMRGCmosaicResponses(...
+            theMRGCmosaicResponseDictionary, ...
+            'photocurrents only', ...
+            0,0, []);
+    
+    
+        mRGCsNum = size(theMRGCmosaicSpatioTemporalResponse,2);
+        imagesc(theTemporalSupportSeconds*1e3, 1:mRGCsNum, theMRGCmosaicSpatioTemporalResponse');
+    
+        timeLimits = [0 4000];
+        yLims = [1 mRGCsNum];
+        set(ax, 'XLim', timeLimits, 'YLim', yLims, 'CLim', max(theMRGCmosaicSpatioTemporalResponse(:))*[-1 1]);
+        xlabel(ax, 'time (msec)');
+        ylabel(ax, 'mRGC index');
+        colormap(ax, RedBlueLUT);
+        colorbar(ax, 'east');
+    
+        PublicationReadyPlotLib.offsetAxes(ax,ff, timeLimits, yLims);
+        PublicationReadyPlotLib.applyFormat(ax,ff);
+    
+        % Export figure
+        theVisualizationPDFfilename = fullfile(exportVisualizationPDFdirectory, 'Photocurrents_Only_XTresponse.pdf');
+                
+        % Generate the path if we need to
+        RGCMosaicConstructor.filepathFor.augmentedPathWithSubdirs(...
+              exportVisualizationRootDirectory, theVisualizationPDFfilename, ...
+              'generateMissingSubDirs', true);
+            
+        thePDFfileName = fullfile(exportVisualizationRootDirectory, theVisualizationPDFfilename);
+        NicePlot.exportFigToPDF(thePDFfileName, hFig, 300, 'beVerbose');
+
+
+    end
+
+
+
+    % Get ready for publication-quality visualization
+    hFig = figure(6000); clf;
+    ff = PublicationReadyPlotLib.figureComponents('1x1 giant rectangular-double wide mosaic', ...
+        'darkScheme', true);
+    theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
+    ax = theAxes{1,1};
+    hold(ax,'on')
+
+    c = brewermap(6, 'blues');
+    color1 = c(6,:);
+    c = brewermap(6, 'reds');
+    color2 = c(6,:);
+
+
+    % The cone modulations + the Benardete & Kaplan original filter
+    theLegends{1} = 'cone modulations + BK filters';
+
+    [theTemporalSupportSeconds, theResponse] = retrieveTheSpatioTemporalMRGCmosaicResponses(...
+        theMRGCmosaicResponseDictionary, ...
+        theLegends{1}, ...
+        0,0, ...
+        targetRGCindex);
+
+    plot(ax, theTemporalSupportSeconds*1e3, theResponse/max(abs(theResponse)), 'k-', 'Color', color1, 'LineWidth', 3.0);
+    pHandles(1) = plot(ax, theTemporalSupportSeconds(1:2:end)*1e3, theResponse(1:2:end)/max(abs(theResponse)), 'o-',...
+        'Color', color1.^0.5, 'MarkerSize', 10, 'MarkerFaceColor', color1, 'MarkerEdgeColor', color1.^0.5, 'LineWidth', 2.0);
+
+
+    % The photocurrent + derived inner retina filter cascade
+    theLegends{2} = 'photocurrents + inner retina filter cascade';
+    theResponseBias = 0.15;
+    theResponseDelay = 12/1000;
+
+    [theTemporalSupportSeconds, theResponse] = retrieveTheSpatioTemporalMRGCmosaicResponses(...
+        theMRGCmosaicResponseDictionary, ...
+        theLegends{2}, ...
+        theResponseBias, theResponseDelay, ...
+        targetRGCindex);
+
+    plot(ax, theTemporalSupportSeconds*1e3, theResponse/max(abs(theResponse)), 'k-', 'Color', color2, 'LineWidth', 3.0);
+    pHandles(numel(pHandles)+1) = scatter(ax, theTemporalSupportSeconds(1:2:end)*1e3, theResponse(1:2:end)/max(abs(theResponse)), 100,...
+        'Color', color2.^0.5, 'MarkerFaceAlpha', 0.8, 'MarkerFaceColor', color2, 'MarkerEdgeColor', color2.^0.5, 'LineWidth', 2.0);
+
+
+    legend(ax, pHandles, theLegends, 'Location', 'NorthOutside', 'NumColumns', 2);
+
+    timeLimits = [0 4000];
+    responseLimits = [-1.0 1.0];
+    set(ax, 'XLim', timeLimits, 'YLim', responseLimits, 'XTick', 0:250:5000, 'YTick', -1:0.5:1);
+    xlabel(ax, 'time (msec)');
+    ylabel(ax, 'mRGC response');
+
+    PublicationReadyPlotLib.offsetAxes(ax,ff, timeLimits, responseLimits);
+    PublicationReadyPlotLib.applyFormat(ax,ff);
+
+
+    % Export figure
+    theVisualizationPDFfilename = fullfile(exportVisualizationPDFdirectory, thePDFfileName);
+            
+    % Generate the path if we need to
+    RGCMosaicConstructor.filepathFor.augmentedPathWithSubdirs(...
+          exportVisualizationRootDirectory, theVisualizationPDFfilename, ...
+          'generateMissingSubDirs', true);
+        
+    thePDFfileName = fullfile(exportVisualizationRootDirectory, theVisualizationPDFfilename);
+    NicePlot.exportFigToPDF(thePDFfileName, hFig, 300, 'beVerbose');
+
+end
+
+
+
+
+
+function [theTemporalSupportSeconds, theResponse] = ...
+        retrieveTheSpatioTemporalMRGCmosaicResponses(theMRGCmosaicResponseDictionary, theDataSetLabel, ...
+        theResponseBias, theResponseDelay, targetRGCindex)
+    
+    minTimeToStabilizeSeconds = 300/1000;
+    maxTimeToVisualize = 4500/1000;
+
+    d = theMRGCmosaicResponseDictionary(theDataSetLabel);
+    if (isempty(targetRGCindex))
+        theResponse = squeeze(d.theMRGCmosaicResponse(1,:,:));
+    else
+        theResponse = squeeze(d.theMRGCmosaicResponse(1,:,targetRGCindex));
+    end
+
+    theTemporalSupportSeconds = d.theTemporalSupportSeconds;
+
+    idx = find((theTemporalSupportSeconds>=minTimeToStabilizeSeconds) & (theTemporalSupportSeconds<=maxTimeToVisualize));    
+    theTemporalSupportSeconds = theTemporalSupportSeconds(idx);
+    theTemporalSupportSeconds = theTemporalSupportSeconds - theTemporalSupportSeconds(1);
+
+    theTemporalSupportSeconds = theTemporalSupportSeconds + theResponseDelay;
+    theResponse = theResponse(idx) + theResponseBias;
+end
+
+
+
+
+function runTheInputConeMosaicSimulation(coneMosaicSpecies, opticsSubjectName, rgcMosaicName, targetVisualSTFdescriptor, ...
+        opticsForTTFresponses, opticsWavefrontSpatialSamples, cropParams, sceneCropParams, ...
+        photocurrentParams, eyeMovementParams, HDRdatabaseYear, HDRimageName, ......
+        visualizeMRGCmosaic, ...
+        exportVisualizationRootDirectory, exportVisualizationPDFdirectory, exportVisualizationVideoDirectory, ...
+        exportDataDirectory, theDataFileName)
+
+
+    % Load the mRGCmosaic specified by the passed parameters:
+    %   coneMosaicSpecies, opticsSubjectName, rgcMosaicName, targetVisualSTFdescriptor
+    % and generate the optics that were used to synthesize the mosaic
+    [theMRGCmosaic, theOptics, thePSFatTheMosaicEccentricity] = mRGCMosaic.loadPrebakedMosaic(...
+            coneMosaicSpecies, opticsSubjectName, rgcMosaicName, targetVisualSTFdescriptor, ...
+            'computeTheMosaicOptics', true, ...
+            'opticsToEmploy', opticsForTTFresponses, ...
+            'wavefrontSpatialSamples', opticsWavefrontSpatialSamples, ...
+            'cropParams', cropParams);
+
+    % Plot a smaller region of the mRGC mosaic with the PSF superimposed
+    narrowDomainVisualizationLimits(1:2) = theMRGCmosaic.eccentricityDegs(1) + [-0.5 0.5]*theMRGCmosaic.sizeDegs(1);
+    narrowDomainVisualizationLimits(3:4) = theMRGCmosaic.eccentricityDegs(2) + [-0.5 0.5]*theMRGCmosaic.sizeDegs(2);
+    narrowDomainVisualizationTicks = struct(...
+        'x', -30:0.2:0, ...
+        'y', -10:0.2:10);
+    
+    
+    if (visualizeMRGCmosaic)
+        fancyMosaicVisualization(theMRGCmosaic, thePSFatTheMosaicEccentricity, ...
+            narrowDomainVisualizationLimits, ...
+            narrowDomainVisualizationTicks, ...
+            exportVisualizationRootDirectory, ...
+            exportVisualizationPDFdirectory);
+    end
+
+
+    % Load an HDR scene
+    [theScene, spatialSupportXdegs, spatialSupportYdegs] = loadMachnesterDataBaseScene(...
+        HDRdatabaseYear, sprintf('%s.mat', HDRimageName));
+
+    % Visualize scene and its luminance map
+    figNo = 1;
+    thePDFfileName = sprintf('%s_%d_%s_original.pdf', 'Manchester', HDRdatabaseYear, HDRimageName);
+    visualizeHDRscene(theScene, spatialSupportXdegs, spatialSupportYdegs, sceneCropParams, figNo,...
+        exportVisualizationRootDirectory, ...
+        exportVisualizationPDFdirectory, ...
+        thePDFfileName);
+
+    % Crop the scene
+    if (~isempty(sceneCropParams))
+        [theScene, spatialSupportXdegs, spatialSupportYdegs] = ...
+            cropScene(theScene, spatialSupportXdegs, spatialSupportYdegs, ...
+            sceneCropParams);
+    end
+
+    % Visualize cropped scene and its luminance map
+    figNo = 2;
+    visualizeHDRscene(theScene, spatialSupportXdegs, spatialSupportYdegs, [], figNo, ...
+        exportVisualizationRootDirectory, ...
+        exportVisualizationPDFdirectory, ...
+        sprintf('%s_%d_%s_cropped.pdf', 'Manchester', HDRdatabaseYear, HDRimageName));
+
+
+
+    % Compute the retinal image
+    theRetinalImage = oiCompute(theOptics,theScene,'pad value','mean');
+
+
+    theMRGCmosaic.inputConeMosaic.integrationTime = 5/1000;
+
+    % Instantiate a fixational eye movement object for generating
+    % fixational eye movements that include drift and microsaccades.
+    fixEMobj = fixationalEM();
+
+    % Generate microsaccades with a mean interval of  150 milliseconds
+    % Much more often than the default, just for video purposes.
+    fixEMobj.microSaccadeMeanIntervalSeconds = eyeMovementParams.microSaccadeMeanIntervalSeconds;
+    
+    % Compute nTrials of emPaths for this mosaic
+    % Here we are fixing the random seed so as to reproduce identical eye
+    % movements whenever this script is run.
+    theFixationalEMObj = generateFixationalEyeMovements(...
+        eyeMovementParams.trialDurationSeconds, eyeMovementParams.nTrials, theMRGCmosaic.inputConeMosaic);
+
+
+    % Compute the cone mosaic excitation responses
+    [theConeMosaicSpatioTemporalExcitationResponse, ~, ~, ~, theConeExcitationsResponseTemporalSupportSeconds] = ...
+            theMRGCmosaic.inputConeMosaic.compute(theRetinalImage, ...
+            'withFixationalEyeMovements', true);
+
+
+    % Compute mean cone excitation rates.
+    % Must be < 30,000 R*/sec to avoid significant bleaching
+    meanConeExcitationRates = mean(theConeMosaicSpatioTemporalExcitationResponse,2)/ theMRGCmosaic.inputConeMosaic.integrationTime;
+    
+    maxConeExcitationRates = max(theConeMosaicSpatioTemporalExcitationResponse,2)/ theMRGCmosaic.inputConeMosaic.integrationTime;
+    
+    fprintf('Range of mean cone excitation rates: %f - %f * 10000 (R*/sec)\n', min(meanConeExcitationRates(:))/1e3, max(meanConeExcitationRates(:))/1e3);
+    fprintf('Range of max cone excitation rates: %f - %f * 10000 (R*/sec)\n', min(maxConeExcitationRates(:))/1e3, max(maxConeExcitationRates(:))/1e3);
+    
+    
+    if (max(meanConeExcitationRates) > 30*1000)
+        error('some mean cone excitation rates were > 30000')
+    end
+
+
+
+    % Compute the photocurrents
+    
+    % Allocate memory for each cone mosaic OS biophys model
+    nCones = size(theConeMosaicSpatioTemporalExcitationResponse,3);
+    theConeOSbiophysModels = cell(1,nCones);
+    
+    eccentricityDegsOfOSbiophysicalModel = sqrt(sum(theMRGCmosaic.inputConeMosaic.eccentricityDegs(:).^2));
+
+
+    skipAssertions = false;
+    iCone = 1;
+    iTrial = 1;
+    % Retrieve this cone's excitations count response 
+    theSingleConeExcitationCountsResponse = squeeze(theConeMosaicSpatioTemporalExcitationResponse(iTrial,:,iCone));
+    
+    % Convert it to a cone excitation rate response
+    theSingleConeExcitationRateResponse = theSingleConeExcitationCountsResponse(:) / theMRGCmosaic.inputConeMosaic.integrationTime;
+    
+    % Compute the cone's mean excitation rate over the entire course of stimulation
+    theSingleConeBackgroundConeExcitationRate = mean(theSingleConeExcitationRateResponse);
+    
+    % Compute the first cone's photocurrent response just to get the number of time
+    % bins and also conduct the assertions
+    [~, thePhotocurrentResponseTemporalSupportSeconds] = cMosaic.photocurrentFromConeExcitationRateUsingBiophysicalOSmodel(...
+        eccentricityDegsOfOSbiophysicalModel, ...
+        theSingleConeExcitationRateResponse, ...
+        theSingleConeBackgroundConeExcitationRate, ...
+        theMRGCmosaic.inputConeMosaic.integrationTime, ...  % the timebase of the cone excitation rate signal
+        photocurrentParams.temporalResolutionSeconds,  ...  % the timebase of the returned photocurrent signal
+        'osTimeStepSeconds', photocurrentParams.osBiophysicalModelTemporalResolutionSeconds, ...  % the time base for running the osBiophysical model
+        'skipAssertions', skipAssertions, ...
+        'theConeOSbiophysModel', theConeOSbiophysModels{iCone});
+
+
+    % Allocate memory for the cone mosaic photocurrent response
+    theConeMosaicSpatioTemporalPhotocurrentResponses = zeros(eyeMovementParams.nTrials, numel(thePhotocurrentResponseTemporalSupportSeconds), nCones);
+    
+    skipAssertions = true;
+    
+    for iTrial = 1:eyeMovementParams.nTrials
+        parfor iCone = 1:nCones
+        
+            if (mod(iCone-1,100)==0)
+                fprintf('Computing photocurrent for cone %d of %d (trial: %d of %d)\n', iCone, nCones, iTrial, eyeMovementParams.nTrials);
+            end
+
+            % Retrieve this cone's excitations count response 
+            theSingleConeExcitationCountsResponse = squeeze(theConeMosaicSpatioTemporalExcitationResponse(iTrial,:,iCone));
+        
+            % Convert it to a cone excitation rate response
+            theSingleConeExcitationRateResponse = theSingleConeExcitationCountsResponse(:) / theMRGCmosaic.inputConeMosaic.integrationTime;
+        
+            % Compute the cone's mean excitation rate over the entire course of stimulation
+            theSingleConeBackgroundConeExcitationRate = mean(theSingleConeExcitationRateResponse);
+        
+            % Compute the cone's photocurrent response
+            [theSingleConePhotocurrentDifferentialResponse, ~, ...
+             theSingleConePhotocurrentBackgroundTransientResponse, ...
+             theConeOSbiophysModels{iCone}] = cMosaic.photocurrentFromConeExcitationRateUsingBiophysicalOSmodel(...
+                    eccentricityDegsOfOSbiophysicalModel, ...
+                    theSingleConeExcitationRateResponse, ...
+                    theSingleConeBackgroundConeExcitationRate, ...
+                    theMRGCmosaic.inputConeMosaic.integrationTime, ...  % the timebase of the cone excitation rate signal
+                    photocurrentParams.temporalResolutionSeconds,  ...  % the timebase of the returned photocurrent signal
+                    'osTimeStepSeconds', photocurrentParams.osBiophysicalModelTemporalResolutionSeconds, ...  % the time base for running the osBiophysical model
+                    'skipAssertions', skipAssertions, ...
+                    'theConeOSbiophysModel', theConeOSbiophysModels{iCone});
+            
+            theConeMosaicSpatioTemporalPhotocurrentResponses(iTrial,:,iCone) = theSingleConePhotocurrentDifferentialResponse;
+        end
+    end
+    
+    theDataFileName = fullfile(exportVisualizationRootDirectory, exportDataDirectory, theDataFileName);
+
+    save(theDataFileName, ...
+        'theMRGCmosaic', ...
+        'sceneCropParams', ...
+        'theConeMosaicSpatioTemporalExcitationResponse', ...
+        'theConeExcitationsResponseTemporalSupportSeconds', ...
+        'theScene', 'theRetinalImage', 'theFixationalEMObj', ...
+        'theConeMosaicSpatioTemporalPhotocurrentResponses', ...
+        'thePhotocurrentResponseTemporalSupportSeconds', ...
+        '-v7.3');
+
+    fprintf('Saved everything to %s', theDataFileName);
 end
 
 
@@ -538,6 +1145,7 @@ end
 %
 
 function visualizeConeExcitationsStimulusModulationAndFixationalEMs(...
+    theMRGCmosaicResponseDictionary, targetRGCindex, ...
     theConeMosaic, theNeuralResponses, temporalSupportSeconds, ...
     theRetinalImage, theFixationalEMOb, ...
     exportVisualizationRootDirectory, ...
@@ -545,13 +1153,20 @@ function visualizeConeExcitationsStimulusModulationAndFixationalEMs(...
     theVideoFileName)
 
 
-    domainVisualizationLimits(1:2) = theConeMosaic.eccentricityDegs(1) + 0.51 * theConeMosaic.sizeDegs(1) * [-1 1];
-    domainVisualizationLimits(3:4) = theConeMosaic.eccentricityDegs(2) + 0.51 * theConeMosaic.sizeDegs(2) * [-1 1];
+    domainVisualizationLimits(1:2) = theConeMosaic.eccentricityDegs(1) + 0.41 * theConeMosaic.sizeDegs(1) * [-1 1];
+    domainVisualizationLimits(3:4) = theConeMosaic.eccentricityDegs(2) + 0.31 * theConeMosaic.sizeDegs(2) * [-1 1];
     domainVisualizationTicks = struct(...
-        'x', theConeMosaic.eccentricityDegs(1) + 0.5 * theConeMosaic.sizeDegs(1) * [-1  0 1], ...
-        'y', theConeMosaic.eccentricityDegs(2) + 0.5 * theConeMosaic.sizeDegs(2) * [-1  0  1]);
+        'x', theConeMosaic.eccentricityDegs(1) + 0.4 * theConeMosaic.sizeDegs(1) * [-1  0 1], ...
+        'y', theConeMosaic.eccentricityDegs(2) + 0.3 * theConeMosaic.sizeDegs(2) * [-1  0  1]);
+
+    xLims = domainVisualizationLimits(1:2)-mean(domainVisualizationLimits(1:2));
+    xTicks = domainVisualizationTicks.x - mean(domainVisualizationLimits(1:2));
+    yLims = domainVisualizationLimits(3:4)-mean(domainVisualizationLimits(3:4));
+    yTicks = domainVisualizationTicks.y - mean(domainVisualizationLimits(3:4));
+
 
     stimulusIlluminance = oiGet(theRetinalImage, 'illuminance');
+    retinalImage = oiGet(theRetinalImage, 'rgbimage');
     illuminanceRange = [min(stimulusIlluminance(:)) max(stimulusIlluminance(:))];
 
     oiPixelWidthDegs = oiGet(theRetinalImage, 'wangular resolution');
@@ -569,23 +1184,36 @@ function visualizeConeExcitationsStimulusModulationAndFixationalEMs(...
         
     theVideoFileName = fullfile(exportVisualizationRootDirectory, theVideoFileName);
 
-    ff = PublicationReadyPlotLib.figureComponents('1x2 giant figure',...
+    ff = PublicationReadyPlotLib.figureComponents('1.5x2 giant figure',...
+        'darkScheme', true);
+
+    fff = PublicationReadyPlotLib.figureComponents('1.5x2 giant figure',...
         'darkScheme', true);
 
     ff.grid = 'off';
+    ff.box  = 'on';
     tmp = ff.backgroundColor;
     ff.backgroundColor = ff.legendBackgroundColor;
     ff.legendBackgroundColor = tmp;
 
+    fff.grid = 'on';
+    fff.box = 'off';
+    fff.backgroundColor = ff.backgroundColor;
+    fff.legendBackgroundColor = ff.legendBackgroundColor;
+
     hFig = figure(10); clf;
     theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
-    axConeMosaicExcitation = theAxes{1,1};
-    axRetinalImageAndEyeMovement = theAxes{1,2};
+    axTraces = theAxes{1,1};
+    axTraces2 = theAxes{2,1};
 
+    axRetinalImageAndEyeMovement = theAxes{1,2};
+    axConeMosaicExcitation = theAxes{2,2};
+    
 
     % Cone mosaic activation range
-    activationRange = [min(theNeuralResponses(:)) max(theNeuralResponses(:))];
+    activationRange = prctile(abs(theNeuralResponses(:)), 99)*[-1 1];
 
+    
     % Visualize each frame of the stimulus/response/fixational EM
     nTrials = size(theNeuralResponses,1);
     timeSamplesNum = size(theNeuralResponses,2);
@@ -593,16 +1221,86 @@ function visualizeConeExcitationsStimulusModulationAndFixationalEMs(...
 
 
     videoOBJ = VideoWriter(theVideoFileName, 'MPEG-4');
-    videoOBJ.FrameRate = 30;
+    videoOBJ.FrameRate = 60;
     videoOBJ.Quality = 100;
     videoOBJ.open();
 
-    visualizedEMpathDurationSeconds = 0.5;
+    visualizedEMpathDurationSeconds = 0.1;
+
+    
+    RedBlueLUT = zeros(1024,3);
+    RedBlueLUT(513,:) = ff.legendBackgroundColor;
+    RedBlueLUT(514:1024,1) = ff.legendBackgroundColor(1) + (1-ff.legendBackgroundColor(1))*(1:511)/511;
+    RedBlueLUT(514:1024,2) = ff.legendBackgroundColor(2);
+    RedBlueLUT(514:1024,3) = ff.legendBackgroundColor(3);
+
+    RedBlueLUT(512:-1:1,1) = ff.legendBackgroundColor(1);
+    RedBlueLUT(512:-1:1,2) = ff.legendBackgroundColor(2);
+    RedBlueLUT(512:-1:1,3) = ff.legendBackgroundColor(3) + (1-ff.legendBackgroundColor(3))*(1:512)/512;
+
+    activationLUT = RedBlueLUT;
+    activationLUT = brewermap(1024, '*greys');
+
+
+
+    c = brewermap(6, 'blues');
+    color1 = c(6,:);
+    c = brewermap(6, 'reds');
+    color2 = c(6,:);
+
+ 
+    theLegends{1} = 'cone modulations + BK filters';
+    [theTemporalSupportSeconds1, theResponse1] = retrieveTheSpatioTemporalMRGCmosaicResponses(...
+        theMRGCmosaicResponseDictionary, ...
+        theLegends{1}, ...
+        0, 0, ...
+        targetRGCindex);
+
+
+    theLegends{2} = 'photocurrents + inner retina filter cascade';
+    theResponseBias = 0.15;
+    theResponseDelay = 12/1000;
+
+    [theTemporalSupportSeconds2, theResponse2] = retrieveTheSpatioTemporalMRGCmosaicResponses(...
+        theMRGCmosaicResponseDictionary, ...
+        theLegends{2}, ...
+        theResponseBias, theResponseDelay, ...
+        targetRGCindex);
+
+
+    theLegends3 = 'photocurrents only';
+    [theTemporalSupportSeconds3, theResponse3] = retrieveTheSpatioTemporalMRGCmosaicResponses(...
+        theMRGCmosaicResponseDictionary, ...
+        theLegends3, ...
+        0,0, ...
+        targetRGCindex);
+
+
+    drawTraces = true;
+    drawTraces3 = true;
+
+    
+    m1 = max(abs(theResponse1(:)));
+    m2 = max(abs(theResponse2(:)));
+    m3 = max(abs(theResponse3(:)));
+    theResponse1 = theResponse1 / m1;
+    theResponse2 = theResponse2 / m2;
+    theResponse3 = theResponse3 / m3;
+
+    traceViewWindowSeconds = 1500/1000;
+
+    minTimeSeconds = traceViewWindowSeconds;
+    maxTimeSeconds = 4500/1000;
+
 
     for iTrial = 1:nTrials
     for iTimePoint = 1:timeSamplesNum
 
         currentTime = temporalSupportSeconds(iTimePoint);
+        if (currentTime < minTimeSeconds) || (currentTime > maxTimeSeconds)
+            continue;
+        end
+        
         theMosaicResponse = theNeuralResponses(iTrial, iTimePoint,:);
 
         % The input cone mosaic activation
@@ -612,35 +1310,44 @@ function visualizeConeExcitationsStimulusModulationAndFixationalEMs(...
             'activationRange', activationRange, ...
             'visualizedConeAperture', 'lightcollectingarea5sigma', ...
             'visualizedConeApertureThetaSamples', 32, ...
+            'activationColorMap', activationLUT, ...
             'backgroundColor', ff.legendBackgroundColor, ...
             'domainVisualizationLimits', domainVisualizationLimits, ...
             'domainVisualizationTicks', domainVisualizationTicks, ...
             'withFigureFormat', ff, ...
             'plotTitleFontSize', 20, ...
-            'plotTitle', sprintf('cone mosaic activation (excitations)\ntime: %2.1f msec', currentTime*1e3));
-    
-            
+            'plotTitle', sprintf('cone mosaic activation (photocurrents)\ntime: %2.1f msec', (currentTime-minTimeSeconds)*1e3));
+        set(axConeMosaicExcitation, 'YaxisLocation', 'right')
+         
         % The retinal illuminance and fixational EM path
-        imagesc(axRetinalImageAndEyeMovement, oiSupport, oiSupport, (stimulusIlluminance-illuminanceRange(1))/(illuminanceRange(2) - illuminanceRange(1)), [0 1]);
+        %imagesc(axRetinalImageAndEyeMovement, oiSupport, oiSupport, (stimulusIlluminance-illuminanceRange(1))/(illuminanceRange(2) - illuminanceRange(1)), [0 1]);
+        image(axRetinalImageAndEyeMovement, oiSupport, oiSupport, retinalImage);
+
 
         % Overlay the fixational EMpath
         hold(axRetinalImageAndEyeMovement, 'on');
 
-        % Visualize fEM during the last visualizedEMpathDurationSecond speriod
+        % Visualize fEM during the last visualizedEMpathDurationSecond period
         timeIndicesVisualized = find(...
-            (temporalSupportSeconds <= currentTime) & ...
-            (temporalSupportSeconds >= currentTime -visualizedEMpathDurationSeconds));
+            (theFixationalEMOb.timeAxis <= currentTime) & ...
+            (theFixationalEMOb.timeAxis >= currentTime -visualizedEMpathDurationSeconds));
+
+        timeIndicesVisualized = min(size(theFixationalEMOb.emPosArcMin,2),timeIndicesVisualized);
 
         plot(axRetinalImageAndEyeMovement, ...
             theFixationalEMOb.emPosArcMin(iTrial, timeIndicesVisualized,1)/60, ...
             theFixationalEMOb.emPosArcMin(iTrial, timeIndicesVisualized,2)/60, '-', ...
-            'LineWidth', 2.0, 'Color', 'k');
-
+            'LineWidth', 3.0, 'Color', 'k');
 
         plot(axRetinalImageAndEyeMovement, ...
             theFixationalEMOb.emPosArcMin(iTrial, timeIndicesVisualized,1)/60, ...
             theFixationalEMOb.emPosArcMin(iTrial, timeIndicesVisualized,2)/60, '-', ...
-            'LineWidth', 1.5, 'Color', 'g');
+            'LineWidth', 2.0, 'Color', 'r');
+
+        plot(axRetinalImageAndEyeMovement, ...
+            theFixationalEMOb.emPosArcMin(iTrial, timeIndicesVisualized(end),1)/60, ...
+            theFixationalEMOb.emPosArcMin(iTrial, timeIndicesVisualized(end),2)/60, 'ro', ...
+            'LineWidth', 2.0, 'MarkerSize', 12, 'MarkerFaceColor', [1 0 0], 'MarkerEdgeColor', [1 1 1]);
 
         hold(axRetinalImageAndEyeMovement, 'off')
 
@@ -648,19 +1355,68 @@ function visualizeConeExcitationsStimulusModulationAndFixationalEMs(...
         axis(axRetinalImageAndEyeMovement, 'image');
         set(axRetinalImageAndEyeMovement, 'FontSize', 20, 'Color', [0 0 0]);
 
-        xLims = domainVisualizationLimits(1:2)-mean(domainVisualizationLimits(1:2));
-        xTicks = domainVisualizationTicks.x - mean(domainVisualizationLimits(1:2));
-        yLims = domainVisualizationLimits(3:4)-mean(domainVisualizationLimits(3:4));
-        yTicks = domainVisualizationTicks.y - mean(domainVisualizationLimits(3:4));
-
+        
         set(axRetinalImageAndEyeMovement, 'XLim', xLims, 'YLim', yLims);
         set(axRetinalImageAndEyeMovement, 'XTick', xTicks, 'YTick', yTicks);
-        set(axRetinalImageAndEyeMovement, 'XTickLabel', sprintf('%1.1f\n', xTicks), 'YTickLabel', sprintf('%1.1f\n', yTicks));
-        colormap(axRetinalImageAndEyeMovement, hot(1024));
-        title(axRetinalImageAndEyeMovement, sprintf('retinal illuminance and\nrecent fixational EM path'));
+        set(axRetinalImageAndEyeMovement, 'XTickLabel', {}, 'YTickLabel', {});
+        colormap(axRetinalImageAndEyeMovement, brewermap(1024, '*greys'));
+        title(axRetinalImageAndEyeMovement, sprintf('retinal illuminance and recent fixational EM path'));
        
-
         PublicationReadyPlotLib.applyFormat(axRetinalImageAndEyeMovement,ff);
+
+   
+        
+        if (drawTraces)
+            drawTraces = false;
+
+            % Plot every 5th point
+            skipSize = 5;
+
+            % The traces
+            pHandles = [];
+            plot(axTraces, (theTemporalSupportSeconds1(1:skipSize:end))*1e3, theResponse1(1:skipSize:end), 'k-', 'Color', color1, 'LineWidth', 3.0);
+
+            pHandles(numel(pHandles)+1) = plot(axTraces, (theTemporalSupportSeconds1(1:skipSize:end))*1e3, theResponse1(1:skipSize:end), 'o-',...
+                'Color', color1.^0.5, 'MarkerSize', 10, 'MarkerFaceColor', color1, 'MarkerEdgeColor', color1.^0.5, 'LineWidth', 2.0);
+            hold(axTraces, 'on')
+    
+    
+            plot(axTraces, theTemporalSupportSeconds2*1e3, theResponse2, 'k-', 'Color', color2, 'LineWidth', 3.0);
+            pHandles(numel(pHandles)+1) = scatter(axTraces, (theTemporalSupportSeconds2(1:skipSize:end))*1e3, theResponse2(1:skipSize:end), 100,...
+                'Color', color2.^0.5, 'MarkerFaceAlpha', 0.8, 'MarkerEdgeColor', color2, 'MarkerFaceColor', color2.^0.5, 'LineWidth', 2.0);
+  
+            legend(axTraces, pHandles, theLegends, 'Location', 'NorthOutside', 'NumColumns', 2);
+        end
+
+        timeLimits = currentTime + [-traceViewWindowSeconds 0];
+        responseLimits = [-1.0 1.0];
+        set(axTraces, 'XLim', timeLimits*1e3, 'YLim', responseLimits, 'XTick', 0:100:6000, 'XTickLabel', sprintf('%2.0f\n', (0:100:6000)-minTimeSeconds*1e3), 'YTick', -1:0.5:1);
+        xlabel(axTraces, 'time (msec)');
+        ylabel(axTraces, 'mRGC response');
+
+        PublicationReadyPlotLib.applyFormat(axTraces,fff);
+        set(axTraces, 'YaxisLocation', 'right')
+
+
+        if (drawTraces3)
+            drawTraces3 = false;
+
+            % The traces
+            skipSize = 5;
+
+            plot(axTraces2, theTemporalSupportSeconds3*1e3, theResponse3, 'k-', 'Color', color1, 'LineWidth', 3.0);
+            p3 = plot(axTraces2, theTemporalSupportSeconds3(1:skipSize:end)*1e3, theResponse3(1:skipSize:end), 'o-',...
+                'Color', color1.^0.5, 'MarkerSize', 10, 'MarkerFaceColor', color1, 'MarkerEdgeColor', color1.^0.5, 'LineWidth', 2.0);
+    
+            legend(axTraces2, p3, theLegends3, 'Location', 'NorthOutside', 'NumColumns', 2);
+        end
+
+        set(axTraces2, 'XLim', timeLimits*1e3, 'YLim', responseLimits, 'XTick', 0:100:6000, 'XTickLabel', {}, 'YTick', -1:0.5:1);
+      
+        ylabel(axTraces2, 'mRGC response');
+        PublicationReadyPlotLib.applyFormat(axTraces2 , fff);
+        set(axTraces2, 'YaxisLocation', 'right')
+
         drawnow;
         videoOBJ.writeVideo(getframe(hFig));
 
