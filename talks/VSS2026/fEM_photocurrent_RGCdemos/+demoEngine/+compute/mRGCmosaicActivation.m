@@ -17,6 +17,7 @@ function mRGCmosaicActivation(theDataFileName, mRGCtemporalFiltersSources, expor
     innerRetinaSurroundImpulseResponseData = d.theDerivedInnerRetinaFiniteTimeImpulseResponseData;
 
 
+
     assert(all(abs(innerRetinaCenterImpulseResponseData.temporalSupportSeconds(:)-innerRetinaSurroundImpulseResponseData.temporalSupportSeconds(:)))<10*eps, ...
         'temporal supports of center and surround do not match');
 
@@ -32,12 +33,8 @@ function mRGCmosaicActivation(theDataFileName, mRGCtemporalFiltersSources, expor
         
     clear('innerRetinaSurroundImpulseResponseData', 'innerRetinaCenterImpulseResponseData');
 
-    figure(5555);
-    plot(innerRetinaTemporalFilters.temporalSupportSeconds, innerRetinaTemporalFilters.centerImpulseResponseFunction, 'r-', 'LineWidth', 1.5);
-    hold on;
-    plot(innerRetinaTemporalFilters.temporalSupportSeconds, innerRetinaTemporalFilters.surroundImpulseResponseFunction, 'b-', 'LineWidth', 1.5);
-    
 
+   
     temporalFrequencySupportHz = 0:0.5:200;
     params = RGCmodels.BenardeteKaplan1997.figure6CenterSurroundFilterParams('ON');
 
@@ -66,11 +63,21 @@ function mRGCmosaicActivation(theDataFileName, mRGCtemporalFiltersSources, expor
         'centerImpulseResponseFunction', centerAmplitude, ...
         'surroundImpulseResponseFunction', surroundAmplitude);
 
-    figure(5556);
-    plot(BenardeteKaplanFig6ONfilters.temporalSupportSeconds, BenardeteKaplanFig6ONfilters.centerImpulseResponseFunction, 'r-', 'LineWidth', 1.5);
-    hold on;
-    plot(BenardeteKaplanFig6ONfilters.temporalSupportSeconds, BenardeteKaplanFig6ONfilters.surroundImpulseResponseFunction, 'b-', 'LineWidth', 1.5);
+
+    figure(5555);
+    ax = subplot(1,2,1);
+    plot(ax, innerRetinaTemporalFilters.temporalSupportSeconds, innerRetinaTemporalFilters.centerImpulseResponseFunction, 'r-', 'LineWidth', 1.5);
+    hold(ax, 'on');
+    plot(innerRetinaTemporalFilters.temporalSupportSeconds, innerRetinaTemporalFilters.surroundImpulseResponseFunction, 'b-', 'LineWidth', 1.5);
     
+
+    ax = subplot(1,2,2);
+    plot(ax, BenardeteKaplanFig6ONfilters.temporalSupportSeconds, BenardeteKaplanFig6ONfilters.centerImpulseResponseFunction, 'r-', 'LineWidth', 1.5);
+    hold on;
+    plot(ax,BenardeteKaplanFig6ONfilters.temporalSupportSeconds, BenardeteKaplanFig6ONfilters.surroundImpulseResponseFunction, 'b-', 'LineWidth', 1.5);
+    
+    pause
+
 
     % Load the data
     theDataFileName = fullfile(exportVisualizationRootDirectory, exportDataDirectory, theDataFileName);
@@ -78,7 +85,6 @@ function mRGCmosaicActivation(theDataFileName, mRGCtemporalFiltersSources, expor
         'theMRGCmosaic', ...
         'theConeMosaicSpatioTemporalExcitationResponse', ...
         'theConeExcitationsResponseTemporalSupportSeconds', ...
-        'theScene', 'theRetinalImage', 'theFixationalEMObj', ...
         'theConeMosaicSpatioTemporalPhotocurrentResponses', ...
         'thePhotocurrentResponseTemporalSupportSeconds');
 
@@ -226,6 +232,7 @@ function mRGCmosaicActivation(theDataFileName, mRGCtemporalFiltersSources, expor
         'theTemporalSupportSeconds', theMRGCMosaicResponseTemporalSupportSeconds);
 
 
+    fprintf('Appending mRGCMosaic responses dictionary to %s\n', theDataFileName);
 
     % Append theMRGCmosaicResponseDictionary
     save(theDataFileName, ...

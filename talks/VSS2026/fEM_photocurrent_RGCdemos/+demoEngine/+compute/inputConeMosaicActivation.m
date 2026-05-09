@@ -47,14 +47,8 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
         [theStimulusSceneSequence, theNullStimulusScene, theSceneStimulusSequenceTemporalSupportSeconds] = ...
             demoEngine.scene.classicCRTstimulus(...
                 gratingParams, theMRGCmosaic, theOptics, visualizeStimulusSequence);
+        nFrames = numel(theSceneStimulusSequenceTemporalSupportSeconds);
 
-
-        % Compute the retinal image for each stimulus frame
-        theRetinalImage = cell(1, numel(theSceneStimulusSequenceTemporalSupportSeconds));
-        parfor iFrame = 1:numel(theSceneStimulusSequenceTemporalSupportSeconds)
-            fprintf('Computing retinal images for stimulus frame %d of %d\n', iFrame, numel(theSceneStimulusSequenceTemporalSupportSeconds));
-            theRetinalImage{iFrame} = oiCompute(theOptics, theStimulusSceneSequence{iFrame},'pad value','mean');
-        end
 
         % Set the integration time of the cone mosaic to the frame duration
         % temporal resolution
@@ -62,6 +56,40 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
             theSceneStimulusSequenceTemporalSupportSeconds(2)-theSceneStimulusSequenceTemporalSupportSeconds(1);
 
 
+        % Set the temporal support of the cone mosaic excitation response
+        % to theSceneStimulusSequenceTemporalSupportSeconds;
+        theConeExcitationsResponseTemporalSupportSeconds = theSceneStimulusSequenceTemporalSupportSeconds;
+
+        % No fixational eye movements
+        theFixationalEMObj = [];
+
+        % Compute the retinal image of the first frame
+        iFrame = 1;
+        theFrameRetinalImage = oiCompute(theOptics, theStimulusSceneSequence{iFrame},'pad value','mean');
+    
+        % Compute the cone mosaic response to the first frame
+        theConeMosaicExcitationFrameResponse = theMRGCmosaic.inputConeMosaic.compute(theFrameRetinalImage);
+        mCones = size(theConeMosaicExcitationFrameResponse,3);
+
+        % Allocate memory for the responses to all the frames
+        theConeMosaicSpatioTemporalExcitationResponse = zeros(1, nFrames, mCones);
+
+        % Copy the response to the first frame we just computed
+        theConeMosaicSpatioTemporalExcitationResponse(1, 1, :) = theConeMosaicExcitationFrameResponse;
+
+        % Compute the responses to the remaining frames
+        parfor iFrame = 2:nFrames
+
+            fprintf('Computing cone mosaic excitations response for frame %d of %d\n', iFrame, nFrames);
+            theFrameRetinalImage = oiCompute(theOptics, theStimulusSceneSequence{iFrame},'pad value','mean');
+    
+            theConeMosaicSpatioTemporalExcitationResponse(1, iFrame, :) = ...
+                theMRGCmosaic.inputConeMosaic.compute(theFrameRetinalImage);
+        end
+
+        % Save the full scene sequence and the retinal image for one frame
+        theScene = theStimulusSceneSequence;
+        theRetinalImage = theFrameRetinalImage;
     else
 
         % Load an HDR scene
@@ -97,30 +125,6 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
         % temporal resolution
         theMRGCmosaic.inputConeMosaic.integrationTime = eyeMovementParams.temporalResolutionSeconds;
 
-    end
-
-    
-    if (isstruct(HDRimageName))
-
-        % CRT modulated stimulus witout fixational eye movements
-        % Compute the cone mosaic excitation responses
-
-        % Compute the response to the first frame
-        theConeMosaicExcitationFrameResponse = theMRGCmosaic.inputConeMosaic.compute(theRetinalImage{1});
-
-        % Allocate memory for the responses to all the frames
-        theConeMosaicSpatioTemporalExcitationResponse = zeros(1, numel(theRetinalImage), size(theConeMosaicExcitationFrameResponse,3));
-        theConeMosaicSpatioTemporalExcitationResponse(1, 1, :) = theConeMosaicExcitationFrameResponse;
-
-        theConeExcitationsResponseTemporalSupportSeconds = theSceneStimulusSequenceTemporalSupportSeconds;
-
-        parfor iFrame = 2:numel(theRetinalImage)
-            fprintf('Computing cone mosaic excitations response for frame %d of %d\n', iFrame, numel(theRetinalImage))
-            theConeMosaicSpatioTemporalExcitationResponse(1, iFrame, :) = ...
-                theMRGCmosaic.inputConeMosaic.compute(theRetinalImage{iFrame});
-        end
-
-    else
         % HDR with fixational eye movements
         % Instantiate a fixational eye movement object for generating
         % fixational eye movements that include drift and microsaccades.
@@ -145,6 +149,8 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
                 'withFixationalEyeMovements', true);
     end
 
+    
+
 
 
     % Compute mean cone excitation rates.
@@ -160,6 +166,7 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
         error('some mean cone excitation rates were > 30000')
     end
 
+    % Now compute the mosaic photocurrents
     [theConeMosaicSpatioTemporalPhotocurrentResponses, ...
      thePhotocurrentResponseTemporalSupportSeconds] = computePhotocurrentActivation(theMRGCmosaic, ...
         theConeMosaicSpatioTemporalExcitationResponse, ...
@@ -183,9 +190,10 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
 end
 
 function [theConeMosaicSpatioTemporalPhotocurrentResponses, ...
-          thePhotocurrentResponseTemporalSupportSeconds] = computePhotocurrentActivation(theMRGCmosaic, ...
-    theConeMosaicSpatioTemporalExcitationResponse, ...
-    photocurrentParams)
+          thePhotocurrentResponseTemporalSupportSeconds] = computePhotocurrentActivation(...
+            theMRGCmosaic, ...
+            theConeMosaicSpatioTemporalExcitationResponse, ...
+            photocurrentParams)
 
     fprintf('Computing photocurrent responses');
 
@@ -228,7 +236,7 @@ function [theConeMosaicSpatioTemporalPhotocurrentResponses, ...
         parfor iCone = 1:nCones
         
             if (mod(iCone-1,100)==0)
-                fprintf('Computing photocurrent for cone %d of %d (trial: %d of %d)\n', iCone, nCones, iTrial, eyeMovementParams.nTrials);
+                fprintf('Computing photocurrent for cone %d of %d (trial: %d of %d)\n', iCone, nCones, iTrial, nTrials);
             end
 
             % Retrieve this cone's excitations count response 
