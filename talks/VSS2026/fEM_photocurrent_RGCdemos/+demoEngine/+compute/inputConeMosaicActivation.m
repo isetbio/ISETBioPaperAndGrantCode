@@ -167,25 +167,41 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
         photocurrentParams);
 
 
+    % Compute cone modulations
     if (isstruct(HDRimageName))
+        % Grating: typical transformation
         % Transform to cone modulations
-        normalizationResponse = 1./theConeMosaicNullSceneExcitationResponse;
-        normalizationResponse(theConeMosaicNullSceneExcitationResponse==0) = 0;
-    
-        % Transform to cone modulations
-        theConeMosaicSpatioTemporalExcitationResponse = bsxfun(@times, ...
-            bsxfun(@minus,theConeMosaicSpatioTemporalExcitationResponse, theConeMosaicNullSceneExcitationResponse), ...
-            normalizationResponse);
+        meanResponse = theConeMosaicNullSceneExcitationResponse;
+    else
+        % HDR image with fixational eye movement. For each cone compute its
+        % mean excitation over the time course of the eye movement path
+        % (dimension 2) and all trials (dimension 1)
+        % Compute mean response over all trials and over all time bins
+        meanResponse = mean(mean(theConeMosaicSpatioTemporalExcitationResponse,2),1);
+        assert(size(meanResponse,3) == mCones, 'size(3) should be # of cones (%d) not (%d)', mCones, size(size(meanResponse,3)));
     end
 
 
-    % Append photocurrents to theDataFileName
+    normalizationResponse = 1./meanResponse;
+    normalizationResponse(meanResponse==0) = 0;
+    
+    % Transform to cone modulations
+    theConeMosaicSpatioTemporalModulationsResponse = bsxfun(@times, ...
+            bsxfun(@minus,theConeMosaicSpatioTemporalExcitationResponse, theConeMosaicNullSceneExcitationResponse), ...
+            normalizationResponse);
+
+    fprintf('mean cone excitations: %f\n', mean(meanResponse(:)));
+    fprintf('mean cone modulations with respect to the mean cone excitations: %f\n', ...
+        mean(abs(theConeMosaicSpatioTemporalModulationsResponse(:))));
+
+
+    % Append photocurrents and cone modulations to theDataFileName
     theDataFileName = fullfile(exportVisualizationRootDirectory, exportDataDirectory, theDataFileName);
     save(theDataFileName, ...
         'theMRGCmosaic', ...
         'sceneCropParams', ...
         'gratingParams', ...
-        'theConeMosaicSpatioTemporalExcitationResponse', ...
+        'theConeMosaicSpatioTemporalModulationsResponse', ...
         'theConeExcitationsResponseTemporalSupportSeconds', ...
         'theScene', 'theRetinalImage', 'theFixationalEMObj', ...
         'theConeMosaicSpatioTemporalPhotocurrentResponses', ...
