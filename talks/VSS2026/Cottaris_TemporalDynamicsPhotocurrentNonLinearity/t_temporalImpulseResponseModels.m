@@ -12,9 +12,9 @@ function t_temporalImpulseResponseModels
     theMacaqueAnnulusImpulseResponseData = RGCmodels.BenardeteKaplan1997.digitizedData.ONcenterAnnulusImpulseResponseFromFigure6();
     theMacaqueDiskImpulseResponseData = RGCmodels.BenardeteKaplan1997.digitizedData.ONcenterDiskImpulseResponseFromFigure6()
 
-    params = RGCmodels.BenardeteKaplan1997.figure6CenterSurroundFilterParams('OFF');
-    theMacaqueAnnulusImpulseResponseData = RGCmodels.BenardeteKaplan1997.digitizedData.OFFcenterAnnulusImpulseResponseFromFigure6();
-    theMacaqueDiskImpulseResponseData = RGCmodels.BenardeteKaplan1997.digitizedData.OFFcenterDiskImpulseResponseFromFigure6();
+    %params = RGCmodels.BenardeteKaplan1997.figure6CenterSurroundFilterParams('OFF');
+    %theMacaqueAnnulusImpulseResponseData = RGCmodels.BenardeteKaplan1997.digitizedData.OFFcenterAnnulusImpulseResponseFromFigure6();
+    %theMacaqueDiskImpulseResponseData = RGCmodels.BenardeteKaplan1997.digitizedData.OFFcenterDiskImpulseResponseFromFigure6();
 
     %params = RGCmodels.BenardeteKaplan1997.figure7CenterSurroundFilterParams();
     %theMacaqueSurroundImpulseResponseData = [];
@@ -26,15 +26,27 @@ function t_temporalImpulseResponseModels
     theSurroundAnnulusTTF = RGCmodels.BenardeteKaplan1997.oneStageHighPassNstageLowPassFilterCascadeTTF(...
         params.surroundIR.pVector, temporalFrequencySupportHz);
 
-    performFFTshift = false;
-    zeroPaddingLength = 512;
-    theCenterDiskImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.impulseResponseFunctionFromTTF(...
-        theCenterDiskTTF, temporalFrequencySupportHz, performFFTshift, zeroPaddingLength);
 
-    theSurroundAnnulusImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.impulseResponseFunctionFromTTF(...
-        theSurroundAnnulusTTF, temporalFrequencySupportHz, performFFTshift, zeroPaddingLength);
+    theCenterDiskImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.sampledTTFtoTemporalImpulseFunction(...
+        theCenterDiskTTF, temporalFrequencySupportHz, ...
+        'causal', false); 
 
-    
+
+    theSurroundAnnulusImpulseResponseData = RGCMosaicConstructor.temporalFilterEngine.sampledTTFtoTemporalImpulseFunction(...
+        theSurroundAnnulusTTF, temporalFrequencySupportHz, ...
+        'causal', false); 
+
+
+    exportVisualizationRootDirectory = ISETBioPaperAndGrantCodeFigureDirForScript(mfilename)
+
+
+    fancyPlotImpulseResponse(...
+        theCenterDiskImpulseResponseData, ...
+        theSurroundAnnulusImpulseResponseData, ...
+        [240 50 80]/255, [50 110 180]/255, ...
+        exportVisualizationRootDirectory, ...
+        sprintf('BK_Fig6_ON.pdf'));
+
 
     plotFilters(1, temporalFrequencySupportHz, ...
         theCenterDiskTTF, theSurroundAnnulusTTF, ...
@@ -67,6 +79,66 @@ function t_temporalImpulseResponseModels
 
 
 end
+
+
+
+function fancyPlotImpulseResponse(theCenterIRdata, theSurroundIRdata, theCenterColor, theSurroundColor, ...
+    exportVisualizationRootDirectory, thePDFfileName)
+
+    hFig = figure(70); clf;
+    ff = PublicationReadyPlotLib.figureComponents('1x1 standard tall figure', ...
+        'darkScheme', true);
+    theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
+    ax = theAxes{1,1};
+
+    maxAmplitude = max([max(abs(theCenterIRdata.amplitude(:))) max(abs(theSurroundIRdata.amplitude(:)))]);
+
+    p1 = scatter(ax, theCenterIRdata.temporalSupportSeconds*1e3, theCenterIRdata.amplitude/maxAmplitude, 12*12, ...
+                'LineWidth', 1.5, ...
+                'MarkerFaceColor', theCenterColor, ...
+                'MarkerFaceAlpha', 1.0, 'MarkerEdgeColor', [1 1 1], 'MarkerEdgeAlpha', 0.5 );
+       
+    hold(ax, 'on');
+
+    p2 = scatter(ax, theSurroundIRdata.temporalSupportSeconds*1e3, theSurroundIRdata.amplitude/maxAmplitude, 12*12, ...
+                'LineWidth', 1.5, ...
+                'MarkerFaceColor', theSurroundColor, ...
+                'MarkerFaceAlpha', 1.0, 'MarkerEdgeColor', [1 1 1], 'MarkerEdgeAlpha', 0.5 );
+    
+
+    legend(ax, [p1 p2], {'spot', 'annulus'}, 'Location', 'NorthEast', 'NumColumns', 1);
+    yAxisLims = 1.01*[-1 1];
+    yAxisTicks = -1:0.5:1;
+    xAxisLims = [0 200];
+    xAxisTicks = 0:25:250;
+
+    xlabel(ax, 'time (msec)')
+    set(ax, 'XLim', xAxisLims, 'XTick', xAxisTicks, 'YLim', yAxisLims, 'YTick', yAxisTicks, 'XScale', 'linear');
+    grid(ax, 'on')
+    ff.legendBox = 'on';
+
+    % Finalize figure using the Publication-Ready format
+    PublicationReadyPlotLib.applyFormat(ax,ff);
+    PublicationReadyPlotLib.offsetAxes(ax, ff, xAxisLims, yAxisLims);
+
+   
+    % Export figure
+    theVisualizationPDFfilename = fullfile(exportVisualizationRootDirectory, thePDFfileName);
+            
+    % Generate the path if we need to
+    RGCMosaicConstructor.filepathFor.augmentedPathWithSubdirs(...
+          exportVisualizationRootDirectory, '', ...
+          'generateMissingSubDirs', true);
+        
+    thePDFfileName = fullfile(exportVisualizationRootDirectory, thePDFfileName);
+    NicePlot.exportFigToPDF(thePDFfileName, hFig, 300, 'beVerbose');
+
+
+
+end
+
+
+
 
 function plotFilters(figNo, temporalFrequencySupportHz, ...
     theCenterTTF, theSurroundTTF, ...

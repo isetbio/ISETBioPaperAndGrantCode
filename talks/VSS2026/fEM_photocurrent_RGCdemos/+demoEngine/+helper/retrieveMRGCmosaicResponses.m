@@ -22,22 +22,26 @@ function [theTemporalSupportSeconds, theResponse, normalizingFactor] = retrieveM
     theTemporalSupportSeconds = theTemporalSupportSeconds - theTemporalSupportSeconds(1);
 
 
-    idx = find(theTemporalSupportSeconds<=maxTimeToVisualize);    
-    theResponse = theResponse(idx);
-    theTemporalSupportSeconds = theTemporalSupportSeconds(idx);
-
+    if (~isempty(maxTimeToVisualize))
+        idx = find(theTemporalSupportSeconds<=maxTimeToVisualize);    
+        theResponse = theResponse(idx);
+        theTemporalSupportSeconds = theTemporalSupportSeconds(idx);
+    end
+    
 
     theTemporalSupportSeconds = theTemporalSupportSeconds + theResponseDelay;
-    theResponse = theResponse(idx) + theResponseBias;
+    theResponse = theResponse + theResponseBias;
 
     % Find the max of the response from the central 1 second of the data
     observationWindowSeconds = 1.0;
     midPoint = mean(theTemporalSupportSeconds);
     indicesMidResponseWindow = find(abs(theTemporalSupportSeconds-midPoint)<0.5*observationWindowSeconds);
 
+    indicesMidResponseWindow = [];
+
     if (isempty(indicesMidResponseWindow))
-        normalizingFactor = max(abs(theResponse));
+        normalizingFactor = 1.05*max(abs(theResponse));
     else
-        normalizingFactor = max(abs(theResponse(indicesMidResponseWindow)));
+        normalizingFactor = 1.05*max(abs(theResponse(indicesMidResponseWindow)));
     end
 end

@@ -44,6 +44,7 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
         gratingParams = HDRimageName;
 
         visualizeStimulusSequence = true;
+        
         [theStimulusSceneSequence, theNullStimulusScene, theSceneStimulusSequenceTemporalSupportSeconds] = ...
             demoEngine.scene.classicCRTstimulus(...
                 gratingParams, theMRGCmosaic, theOptics, visualizeStimulusSequence);
@@ -63,22 +64,18 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
         % No fixational eye movements
         theFixationalEMObj = [];
 
-        % Compute the retinal image of the first frame
-        iFrame = 1;
-        theFrameRetinalImage = oiCompute(theOptics, theStimulusSceneSequence{iFrame},'pad value','mean');
+        % Compute the retinal image of the null scene
+        theNullSceneRetinalImage = oiCompute(theOptics, theNullStimulusScene,'pad value','mean');
     
-        % Compute the cone mosaic response to the first frame
-        theConeMosaicExcitationFrameResponse = theMRGCmosaic.inputConeMosaic.compute(theFrameRetinalImage);
-        mCones = size(theConeMosaicExcitationFrameResponse,3);
+        % Compute the cone mosaic response to the null scene
+        theConeMosaicNullSceneExcitationResponse = theMRGCmosaic.inputConeMosaic.compute(theNullSceneRetinalImage);
+        mCones = size(theConeMosaicNullSceneExcitationResponse,3);
 
         % Allocate memory for the responses to all the frames
         theConeMosaicSpatioTemporalExcitationResponse = zeros(1, nFrames, mCones);
 
-        % Copy the response to the first frame we just computed
-        theConeMosaicSpatioTemporalExcitationResponse(1, 1, :) = theConeMosaicExcitationFrameResponse;
-
         % Compute the responses to the remaining frames
-        parfor iFrame = 2:nFrames
+        parfor iFrame = 1:nFrames
 
             fprintf('Computing cone mosaic excitations response for frame %d of %d\n', iFrame, nFrames);
             theFrameRetinalImage = oiCompute(theOptics, theStimulusSceneSequence{iFrame},'pad value','mean');
@@ -89,7 +86,7 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
 
         % Save the full scene sequence and the retinal image for one frame
         theScene = theStimulusSceneSequence;
-        theRetinalImage = theFrameRetinalImage;
+        theRetinalImage = oiCompute(theOptics, theStimulusSceneSequence{1},'pad value','mean');
     else
 
         % Load an HDR scene
@@ -150,9 +147,6 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
     end
 
     
-
-
-
     % Compute mean cone excitation rates.
     % Must be < 30,000 R*/sec to avoid significant bleaching
     meanConeExcitationRates = mean(theConeMosaicSpatioTemporalExcitationResponse,2)/ theMRGCmosaic.inputConeMosaic.integrationTime;
@@ -171,6 +165,19 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
      thePhotocurrentResponseTemporalSupportSeconds] = computePhotocurrentActivation(theMRGCmosaic, ...
         theConeMosaicSpatioTemporalExcitationResponse, ...
         photocurrentParams);
+
+
+    if (isstruct(HDRimageName))
+        % Transform to cone modulations
+        normalizationResponse = 1./theConeMosaicNullSceneExcitationResponse;
+        normalizationResponse(theConeMosaicNullSceneExcitationResponse==0) = 0;
+    
+        % Transform to cone modulations
+        theConeMosaicSpatioTemporalExcitationResponse = bsxfun(@times, ...
+            bsxfun(@minus,theConeMosaicSpatioTemporalExcitationResponse, theConeMosaicNullSceneExcitationResponse), ...
+            normalizationResponse);
+    end
+
 
     % Append photocurrents to theDataFileName
     theDataFileName = fullfile(exportVisualizationRootDirectory, exportDataDirectory, theDataFileName);

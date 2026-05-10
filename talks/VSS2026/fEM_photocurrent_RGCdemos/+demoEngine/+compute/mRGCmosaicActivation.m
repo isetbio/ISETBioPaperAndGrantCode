@@ -76,7 +76,6 @@ function mRGCmosaicActivation(theDataFileName, mRGCtemporalFiltersSources, expor
     hold on;
     plot(ax,BenardeteKaplanFig6ONfilters.temporalSupportSeconds, BenardeteKaplanFig6ONfilters.surroundImpulseResponseFunction, 'b-', 'LineWidth', 1.5);
     
-    pause
 
 
     % Load the data

@@ -18,12 +18,16 @@ function t_temporalDynamicsFixationalEMphotocurrentDemo(options)
 
 
     % =========== DRIFTING GRATING scene ==================================
+    %        2  4  8
+    %   90   x  x  x
+    %   25   x  x  x
+
     HDRimageName = struct(...
         'type', 'driftingGrating', ...
         'orientationDegs', 0, ...
         'spatialFrequencyCPD', 2.0, ...
         'temporalFrequencyHz', 4.0, ...         % Croner & Kaplan
-        'contrast', 0.25, ...                   % Croner & Kaplan
+        'contrast', 0.40, ...                   % Croner & Kaplan
         'coneContrasts', [1 1 1], ...
         'backgroundLuminanceCdM2', 40, ...      % Croner & Kaplan
         'backgroundChromaticity', [0.31 0.31], ...
@@ -38,13 +42,13 @@ function t_temporalDynamicsFixationalEMphotocurrentDemo(options)
 
     % ========== VSS 2026 HDR scene  ======================================
     % Distant forest, luminance range: 17-230 (mean: 10)
-    HDRdatabaseYear = 2004
+    HDRdatabaseYear = 2004;
     HDRimageName = 'scene1';
     sceneCropParams = struct(...
         'positionDegs', [1 0], ...
         'sizeDegs', [4 4], ...          % grab a 4x4 patch,
         'imageFOVdegs', 2.0, ...        % scale it to a 1x1 patch
-        'meanLuminanceCdM2', 30 ...     % and asdjust its mean luminance
+        'meanLuminanceCdM2', 60 ...     % and asdjust its mean luminance
     );
     % -====================================================================
 
@@ -122,6 +126,7 @@ function t_temporalDynamicsFixationalEMphotocurrentDemo(options)
     % Stage 2: mRGC mosaic responses
     recomputeMRGCmosaicSimulation = true;
 
+    overlaySceneInsetOnTopOfRetinalImageVideo = true;
 
     % Run the simulation
     t_temporalDynamicsFixationalEMphotocurrentDemo(...
@@ -138,7 +143,7 @@ function t_temporalDynamicsFixationalEMphotocurrentDemo(options)
         'recomputeMRGCmosaicSimulation', recomputeMRGCmosaicSimulation, ...
         'mRGCtemporalFiltersSources', mRGCtemporalFiltersSources, ...
         'visualizeResponsesOfInputConesToRGCindex', 30, ...
-        'overlaySceneInsetOnTopOfRetinalImage', false);
+        'overlaySceneInsetOnTopOfRetinalImageVideo', overlaySceneInsetOnTopOfRetinalImageVideo);
 
         
 
@@ -255,7 +260,7 @@ arguments
     % Whether to close previously open figures
     options.closePreviouslyOpenFigures (1,1) logical = true;
 
-    options.overlaySceneInsetOnTopOfRetinalImage logical = false;
+    options.overlaySceneInsetOnTopOfRetinalImageVideo logical = false;
 end
 
     % Set flags from key/value pairs
@@ -315,7 +320,7 @@ end
     visualizeMRGCmosaic = options.visualizeMRGCmosaic;
     visualizeResponsesOfInputConesToRGCindex = options.visualizeResponsesOfInputConesToRGCindex;
 
-    overlaySceneInsetOnTopOfRetinalImage = options.overlaySceneInsetOnTopOfRetinalImage;
+    overlaySceneInsetOnTopOfRetinalImageVideo = options.overlaySceneInsetOnTopOfRetinalImageVideo;
     
     % Close previously open figures
     closePreviouslyOpenFigures = options.closePreviouslyOpenFigures;
@@ -363,22 +368,37 @@ end
 
     % Load previously computed data and render video / static images
 
-    % Bias and delay to be applied to the photocurrent + inner retina
-    % filter to visually align it to the cone excitations + B&K filter
-    theResponseBias = 0.05;
-    theResponseDelay = 10/1000;
-    maxTimeToVisualize = 3500/1000;
+    if (isstruct(HDRimageName))
+        % Bias and delay for the casscade of photocurrents + inner retina
+        % filter resposes (for sinusoids)
+        theResponseBias = 0.0;
+        theResponseDelay = 0/1000;
 
-    % Bias and delay for the casscade of photocurrents + inner retina
-    % filter resposes
-    theResponseBias = 0.0;
-    theResponseDelay = 5/1000;
-    maxTimeToVisualize = 1000/1000;
+         maxTimeToVisualizeSeconds = [];  % Empty means all of it 3500/1000;
 
+        % nan means do not normalize
+        theResponseNormalizingFactors = 1 ./ (1.8 * [10 1 0.06]);  % GRATINGS
+    
+    else
+        % HDR images
+        theResponseBias = 0.0;
+        theResponseDelay = 0/1000;
+
+        maxTimeToVisualizeSeconds = [];  % Empty means all of it 3500/1000;
+
+        % Duration of the sliding trace view window in the video
+        traceViewWindowSeconds = 1500/1000;
+
+        % nan means do not normalize
+        theResponseNormalizingFactors = 1 ./ (0.8 * [4 1 0.06]);  % HDR
+    end
+
+    traceViewWindowSeconds = 1500/1000;
     demoEngine.visualize.simulationAnimationsAndStaticRenderings(...
         theDataFileName, visualizeResponsesOfInputConesToRGCindex, ...
-        theResponseBias, theResponseDelay, maxTimeToVisualize, ...
-        overlaySceneInsetOnTopOfRetinalImage, ...
+        theResponseNormalizingFactors, theResponseBias, theResponseDelay, ...
+        maxTimeToVisualizeSeconds, traceViewWindowSeconds, ...
+        overlaySceneInsetOnTopOfRetinalImageVideo, ...
         exportVisualizationRootDirectory, exportVisualizationPDFdirectory, ...
         exportVisualizationVideoDirectory, exportDataDirectory);
    

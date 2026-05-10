@@ -6,7 +6,9 @@ function simulationTimeCourse(...
     theMRGCmosaicResponseDictionary, targetRGCindex, ...
     theConeMosaic, theInputConeMosaicPhotocurrentActivation, ...
     theInputConeMosaicPhotocurrentTemporalSupportSeconds, ...
-    theResponseBias, theResponseDelay, ...
+    theResponseLabels, theResponseColors, ...
+    theResponseNormalizingFactors, theResponseBias, theResponseDelay, ...
+    maxTimeToVisualize, traceViewWindowSeconds, ...
     theScene, theRetinalImage, theFixationalEMOb, ...
     exportVisualizationRootDirectory, ...
     exportVisualizationVideoDirectory, ...
@@ -103,67 +105,58 @@ function simulationTimeCourse(...
 
     activationLUT = RedBlueLUT;
     activationLUT = brewermap(1024, '*greys');
-
-
-    % The color of 'cone modulations + BK filters'
-    c = brewermap(6, 'blues');
-    color1 = c(6,:);
-
-    % The color of 'photocurrents + inner retina filter cascade'
-    c = brewermap(6, 'reds');
-    color2 = c(6,:);
-
-    % The color of 'photocurrents only';
-    c = brewermap(6, 'greens');
-    color3 = c(6,:);
  
 
     % Retrieve the data
-    theLegends{1} = 'cone modulations + BK filters';
-    [theTemporalSupportSeconds1, theResponse1] = demoEngine.helper.retrieveMRGCmosaicResponses(...
+    [theTemporalSupportSeconds1, theResponse1, normalizingFactor1] = demoEngine.helper.retrieveMRGCmosaicResponses(...
         theMRGCmosaicResponseDictionary, ...
-        theLegends{1}, ...
-        0, 0, ...
+        theResponseLabels{1}, ...
+        theResponseBias(1), theResponseDelay(1), maxTimeToVisualize, ...
         targetRGCindex);
 
 
     % Retrieve the data
-    theLegends{2} = 'photocurrents + inner retina filter cascade';
-    [theTemporalSupportSeconds2, theResponse2] = demoEngine.helper.retrieveMRGCmosaicResponses(...
+    [theTemporalSupportSeconds2, theResponse2, normalizingFactor2] = demoEngine.helper.retrieveMRGCmosaicResponses(...
         theMRGCmosaicResponseDictionary, ...
-        theLegends{2}, ...
-        theResponseBias, theResponseDelay, ...
+        theResponseLabels{2}, ...
+        theResponseBias(2), theResponseDelay(2), maxTimeToVisualize, ...
         targetRGCindex);
 
     % Retrieve the data
-    theLegends3 = 'photocurrents only';
-    [theTemporalSupportSeconds3, theResponse3] = demoEngine.helper.retrieveMRGCmosaicResponses(...
+    [theTemporalSupportSeconds3, theResponse3, normalizingFactor3] = demoEngine.helper.retrieveMRGCmosaicResponses(...
         theMRGCmosaicResponseDictionary, ...
-        theLegends3, ...
-        0,0, ...
+        theResponseLabels{3}, ...
+        theResponseBias(3), theResponseDelay(3), maxTimeToVisualize, ...
         targetRGCindex);
 
-
-    drawTraces = true;
-    drawTraces3 = true;
 
     
+    
     % Response normalization
-    m1 = max(abs(theResponse1(:)));
-    m2 = max(abs(theResponse2(:)));
-    m3 = max(abs(theResponse3(:)));
-    theResponse1 = theResponse1 / m1;
-    theResponse2 = theResponse2 / m2;
-    theResponse3 = theResponse3 / m3;
+    if (isempty(theResponseNormalizingFactors))
+            theResponse1 = theResponse1 / normalizingFactor1;
+            theResponse2 = theResponse2 / normalizingFactor2;
+            theResponse3 = theResponse3 / normalizingFactor3;
+    else 
+        if (~isnan(theResponseNormalizingFactors(1)))
+            theResponse1 = theResponse1 / theResponseNormalizingFactors(1);
+        end
+        if (~isnan(theResponseNormalizingFactors(2)))
+            theResponse2 = theResponse2 / theResponseNormalizingFactors(2);
+        end
+        if (~isnan(theResponseNormalizingFactors(3)))
+            theResponse3 = theResponse3 / theResponseNormalizingFactors(3);
+        end
+    end
 
-    % The view window
-    traceViewWindowSeconds = 1500/1000;
+    
 
     % The time of visualization
     minTimeSeconds = traceViewWindowSeconds;
-    maxTimeSeconds = 4200/1000;
+    maxTimeSeconds = max(theInputConeMosaicPhotocurrentTemporalSupportSeconds)-traceViewWindowSeconds;
 
 
+    drawTraces = true;
     for iTrial = 1:nTrials
     for iTimePoint = 1:timeSamplesNum
 
@@ -195,14 +188,6 @@ function simulationTimeCourse(...
         %imagesc(axRetinalImageAndEyeMovement, oiSupport, oiSupport, (stimulusIlluminance-illuminanceRange(1))/(illuminanceRange(2) - illuminanceRange(1)), [0 1]);
         image(axRetinalImageAndEyeMovement, oiSupport, oiSupport, retinalImage);
 
-
-        if (~isempty(theScene))
-            axSceneInset = axes('Position', [0.84 0.55 0.13 0.13]);
-            image(axSceneInset, theSceneImage);
-            axis(axSceneInset, 'image');
-            set(axSceneInset, 'XTick', [], 'YTick', []);
-        end
-        
 
         % Overlay the fixational EMpath
         hold(axRetinalImageAndEyeMovement, 'on');
@@ -245,6 +230,14 @@ function simulationTimeCourse(...
         PublicationReadyPlotLib.applyFormat(axRetinalImageAndEyeMovement,ff);
 
    
+        if (~isempty(theScene))
+            % thumbnail of scene
+            axSceneInset = axes('Position', [0.84 0.55 0.13 0.13]);
+            image(axSceneInset, theSceneImage(1:5:end, 1:5:end,:));
+            axis(axSceneInset, 'image');
+            set(axSceneInset, 'XTick', [], 'YTick', []);
+        end
+
         
         if (drawTraces)
             drawTraces = false;
@@ -254,23 +247,40 @@ function simulationTimeCourse(...
 
             % The traces
             pHandles = [];
-            plot(axTraces, (theTemporalSupportSeconds1(1:skipSize:end))*1e3, theResponse1(1:skipSize:end), 'k-', 'Color', color1, 'LineWidth', 3.0);
+            plot(axTraces, (theTemporalSupportSeconds1(1:skipSize:end))*1e3, theResponse1(1:skipSize:end), ...
+                'k-', 'Color', theResponseColors(1,:), 'LineWidth', 3.0);
 
             pHandles(numel(pHandles)+1) = plot(axTraces, (theTemporalSupportSeconds1(1:skipSize:end))*1e3, theResponse1(1:skipSize:end), 'o-',...
-                'Color', color1.^0.5, 'MarkerSize', 10, 'MarkerFaceColor', color1, 'MarkerEdgeColor', color1.^0.5, 'LineWidth', 2.0);
+                'MarkerSize', 10, 'LineWidth', 2.0, 'Color', theResponseColors(1,:).^0.5,  ...
+                'MarkerFaceColor', theResponseColors(1,:), 'MarkerEdgeColor', theResponseColors(1,:).^0.5);
             hold(axTraces, 'on')
     
     
-            plot(axTraces, theTemporalSupportSeconds2*1e3, theResponse2, 'k-', 'Color', color2, 'LineWidth', 3.0);
-            pHandles(numel(pHandles)+1) = scatter(axTraces, (theTemporalSupportSeconds2(1:skipSize:end))*1e3, theResponse2(1:skipSize:end), 100,...
-                'Color', color2.^0.5, 'MarkerFaceAlpha', 0.8, 'MarkerEdgeColor', color2, 'MarkerFaceColor', color2.^0.5, 'LineWidth', 2.0);
+            plot(axTraces, theTemporalSupportSeconds2*1e3, theResponse2, ...
+                'k-', 'Color', theResponseColors(2,:), 'LineWidth', 3.0);
+
+            pHandles(numel(pHandles)+1) = scatter(axTraces, (theTemporalSupportSeconds2(1:skipSize:end))*1e3, theResponse2(1:skipSize:end), ...
+                100, 'LineWidth', 2.0, 'Color', theResponseColors(2,:).^0.5, 'MarkerFaceAlpha', 0.8, ...
+                'MarkerEdgeColor', theResponseColors(2,:), 'MarkerFaceColor', theResponseColors(2,:).^0.5);
   
-            legend(axTraces, pHandles, theLegends, 'Location', 'NorthOutside', 'NumColumns', 2);
+            legend(axTraces, pHandles, theResponseLabels{1:2}, 'Location', 'NorthOutside', 'NumColumns', 2);
+
+
+            plot(axTraces2, theTemporalSupportSeconds3*1e3, theResponse3, ...
+                'k-', 'Color', theResponseColors(3,:), 'LineWidth', 3.0);
+
+            p3 = plot(axTraces2, theTemporalSupportSeconds3(1:skipSize:end)*1e3, theResponse3(1:skipSize:end), 'o-',...
+                'Color', theResponseColors(3,:).^0.5, 'MarkerSize', 10, 'LineWidth', 2.0, ...
+                'MarkerFaceColor', theResponseColors(3,:), 'MarkerEdgeColor', theResponseColors(3,:).^0.5);
+    
+            legend(axTraces2, p3, theResponseLabels{3}, 'Location', 'NorthOutside', 'NumColumns', 2);
         end
+
 
         timeLimits = currentTime + [-traceViewWindowSeconds 0];
         responseLimits = [-1.0 1.0];
-        set(axTraces, 'XLim', timeLimits*1e3, 'YLim', responseLimits, 'XTick', 0:100:6000, 'XTickLabel', sprintf('%2.0f\n', (0:100:6000)-minTimeSeconds*1e3), 'YTick', -1:0.5:1);
+        set(axTraces, 'XLim', timeLimits*1e3, 'YLim', responseLimits, ...
+            'XTick', 0:100:6000, 'XTickLabel', sprintf('%2.0f\n', (0:100:6000)-minTimeSeconds*1e3), 'YTick', -1:0.5:1);
         xlabel(axTraces, 'time (msec)');
         ylabel(axTraces, 'mRGC response');
 
@@ -278,21 +288,8 @@ function simulationTimeCourse(...
         set(axTraces, 'YaxisLocation', 'right')
 
 
-        if (drawTraces3)
-            drawTraces3 = false;
-
-            % The traces
-            skipSize = 5;
-
-            plot(axTraces2, theTemporalSupportSeconds3*1e3, theResponse3, 'k-', 'Color', color3, 'LineWidth', 3.0);
-            p3 = plot(axTraces2, theTemporalSupportSeconds3(1:skipSize:end)*1e3, theResponse3(1:skipSize:end), 'o-',...
-                'Color', color3.^0.5, 'MarkerSize', 10, 'MarkerFaceColor', color3, 'MarkerEdgeColor', color3.^0.5, 'LineWidth', 2.0);
-    
-            legend(axTraces2, p3, theLegends3, 'Location', 'NorthOutside', 'NumColumns', 2);
-        end
 
         set(axTraces2, 'XLim', timeLimits*1e3, 'YLim', responseLimits, 'XTick', 0:100:6000, 'XTickLabel', {}, 'YTick', -1:0.5:1);
-      
         ylabel(axTraces2, 'mRGC response');
         PublicationReadyPlotLib.applyFormat(axTraces2 , fff);
         set(axTraces2, 'YaxisLocation', 'right')

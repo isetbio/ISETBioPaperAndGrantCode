@@ -3,7 +3,7 @@
 %
 function responseTimeSeriesForSingleMRGC(targetRGCindex, ...
     theMRGCmosaicResponseDictionary, theResponseLabels, theResponseColors, ...
-    theResponseBias, theResponseDelay, maxTimeToVisualize, ...
+    theResponseNormalizingFactors, theResponseBias, theResponseDelay, maxTimeToVisualize, ...
     exportVisualizationRootDirectory, exportVisualizationPDFdirectory, thePDFfileName)
 
 
@@ -39,7 +39,12 @@ function responseTimeSeriesForSingleMRGC(targetRGCindex, ...
             theResponseBias(iResponse), theResponseDelay(iResponse), maxTimeToVisualize, ...
             targetRGCindex);
 
-        theResponse = theResponse / normalizingFactor;
+        % How to normalize
+        if (isempty(theResponseNormalizingFactors))
+            theResponse = theResponse / normalizingFactor;
+        elseif (~isnan(theResponseNormalizingFactors(iResponse)))
+            theResponse = theResponse / theResponseNormalizingFactors(iResponse);
+        end
 
         if (iResponse == 1)
             % baseline
