@@ -67,11 +67,20 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
         % Compute the retinal image of the null scene
         theNullSceneRetinalImage = oiCompute(theOptics, theNullStimulusScene,'pad value','mean');
     
-        % Compute the cone mosaic response to the null scene
+        % Compute the cone mosaic response to the null scene (background)
         theConeMosaicNullSceneExcitationResponse = theMRGCmosaic.inputConeMosaic.compute(theNullSceneRetinalImage);
-        mCones = size(theConeMosaicNullSceneExcitationResponse,3);
+
+        % Compute mean cone excitation rates.
+        meanConeExcitationRates = mean(theConeMosaicNullSceneExcitationResponse,2)/ theMRGCmosaic.inputConeMosaic.integrationTime;
+        fprintf('\nRange of mean cone excitation rates for grating stimulus: %f - %f * 10000 (R*/sec)\n', min(meanConeExcitationRates(:))/1e3, max(meanConeExcitationRates(:))/1e3);
+    
+        % Assert we are below 30,000 R*/sec, where photopigment leaching is < 2%
+        if (max(meanConeExcitationRates) > 30*1000)
+            error(sprintf('Mean cone excitation rates are > 30k R*/sec.\nAt adaptation levels up to 30k R*/sec,\nphotopigment bleaching is less than 2%%,\nand can therefore be ignored (See Cottaris et al., JoV, 2020'))
+        end
 
         % Allocate memory for the responses to all the frames
+        mCones = size(theConeMosaicNullSceneExcitationResponse,3);
         theConeMosaicSpatioTemporalExcitationResponse = zeros(1, nFrames, mCones);
 
         % Compute the responses to the remaining frames
@@ -87,6 +96,9 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
         % Save the full scene sequence and the retinal image for one frame
         theScene = theStimulusSceneSequence;
         theRetinalImage = oiCompute(theOptics, theStimulusSceneSequence{1},'pad value','mean');
+
+        maxConeExcitationRates = max(theConeMosaicSpatioTemporalExcitationResponse(:))/ theMRGCmosaic.inputConeMosaic.integrationTime;
+       
     else
 
         % Load an HDR scene
@@ -146,21 +158,21 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
                 'withFixationalEyeMovements', true);
 
          mCones = size(theConeMosaicSpatioTemporalExcitationResponse,3);
-    end
 
+        % Compute mean cone excitation rates by averaging over the eye movement path
+        % Must be < 30,000 R*/sec to avoid significant bleaching
+        meanConeExcitationRates = mean(theConeMosaicSpatioTemporalExcitationResponse,2)/ theMRGCmosaic.inputConeMosaic.integrationTime;
+        maxConeExcitationRates = max(theConeMosaicSpatioTemporalExcitationResponse,2)/ theMRGCmosaic.inputConeMosaic.integrationTime;
+        fprintf('Range of mean cone excitation rates for HDR scene scan: %f - %f * 10000 (R*/sec)\n', min(meanConeExcitationRates(:))/1e3, max(meanConeExcitationRates(:))/1e3);
+        
+        % Assert we are below 30,000 R*/sec, where photopigment leaching is < 2%
+        if (max(meanConeExcitationRates) > 30*1000)
+            error(sprintf('Mean cone excitation rates are > 30k R*/sec.\nAt adaptation levels up to 30k R*/sec,\nphotopigment bleaching is less than 2%%,\nand can therefore be ignored (See Cottaris et al., JoV, 2020'))
+        end
+    end  % HDR image under fixational EMs
+
+    fprintf('\nRange of max cone excitation rates: %f - %f * 10000 (R*/sec)\n', min(maxConeExcitationRates(:))/1e3, max(maxConeExcitationRates(:))/1e3);
     
-    % Compute mean cone excitation rates.
-    % Must be < 30,000 R*/sec to avoid significant bleaching
-    meanConeExcitationRates = mean(theConeMosaicSpatioTemporalExcitationResponse,2)/ theMRGCmosaic.inputConeMosaic.integrationTime;
-    maxConeExcitationRates = max(theConeMosaicSpatioTemporalExcitationResponse,2)/ theMRGCmosaic.inputConeMosaic.integrationTime;
-    
-    fprintf('Range of mean cone excitation rates: %f - %f * 10000 (R*/sec)\n', min(meanConeExcitationRates(:))/1e3, max(meanConeExcitationRates(:))/1e3);
-    fprintf('Range of max cone excitation rates: %f - %f * 10000 (R*/sec)\n', min(maxConeExcitationRates(:))/1e3, max(maxConeExcitationRates(:))/1e3);
-    
-    
-    if (max(meanConeExcitationRates) > 30*1000)
-        error('some mean cone excitation rates were > 30000')
-    end
 
     % Now compute the mosaic photocurrents
     [theConeMosaicSpatioTemporalPhotocurrentResponses, ...
