@@ -372,25 +372,29 @@ end
         % Bias and delay for the casscade of photocurrents + inner retina
         % filter resposes (for sinusoids)
         theResponseBias = 0.0;
-        theResponseDelay = 0/1000;
+        theResponseDelay = 12/1000;   % align the zero crossings
 
-        maxTimeToVisualizeSeconds = 2000/1000;  % Empty means all of it 3500/1000;
+        maxTimeToVisualizeSeconds = 1000/1000;  % Empty means all of it
 
         % nan means do not normalize
-        theResponseNormalizingFactors = 1 ./ (1.8 * [10 1 0.06]);  % GRATINGS
+        theResponseNormalizingFactors = []; %1 ./ (10.0 * [20 1.5 0.06]);  % GRATINGS
+
+        figureFormatForStaticResponseTimeSeries = '1x1 standard tall2 figure';
     
     else
         % HDR images
         theResponseBias = 0.0;
-        theResponseDelay = 0/1000;
+        theResponseDelay = 12/1000;
 
-        maxTimeToVisualizeSeconds = [];  % Empty means all of it 3500/1000;
+        maxTimeToVisualizeSeconds = 4;  % Empty means all of it 3500/1000;
 
         % Duration of the sliding trace view window in the video
         traceViewWindowSeconds = 1500/1000;
 
         % nan means do not normalize
-        theResponseNormalizingFactors = 1 ./ (0.8 * [4 1 0.06]);  % HDR
+        theResponseNormalizingFactors = []; %1 ./ (0.25 * [20 3 0.15]);  % HDR
+
+        figureFormatForStaticResponseTimeSeries = '1x1 giant rectangular-wide2 mosaic';
     end
 
     traceViewWindowSeconds = 1500/1000;
@@ -399,6 +403,7 @@ end
         theResponseNormalizingFactors, theResponseBias, theResponseDelay, ...
         maxTimeToVisualizeSeconds, traceViewWindowSeconds, ...
         overlaySceneInsetOnTopOfRetinalImageVideo, ...
+        figureFormatForStaticResponseTimeSeries, ...
         exportVisualizationRootDirectory, exportVisualizationPDFdirectory, ...
         exportVisualizationVideoDirectory, exportDataDirectory);
    

@@ -26,7 +26,11 @@ function simulationTimeCourse(...
     yLims = domainVisualizationLimits(3:4)-mean(domainVisualizationLimits(3:4));
     yTicks = domainVisualizationTicks.y - mean(domainVisualizationLimits(3:4));
 
+
     if (~isempty(theScene))
+        if (iscell(theScene))
+            error('A cell of scenes. NO code to visualize dynamic stimuli yet')
+        end
         theSceneImage = sceneGet(theScene, 'rgbimage');
     end
 
@@ -52,8 +56,7 @@ function simulationTimeCourse(...
     ff = PublicationReadyPlotLib.figureComponents('1.5x2 giant figure',...
         'darkScheme', true);
 
-    fff = PublicationReadyPlotLib.figureComponents('1.5x2 giant figure',...
-        'darkScheme', true);
+    fff = ff;
 
     ff.grid = 'off';
     ff.box  = 'on';

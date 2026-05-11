@@ -4,12 +4,11 @@
 function responseTimeSeriesForSingleMRGC(targetRGCindex, ...
     theMRGCmosaicResponseDictionary, theResponseLabels, theResponseColors, ...
     theResponseNormalizingFactors, theResponseBias, theResponseDelay, maxTimeToVisualize, ...
+    figureFormatForStaticResponseTimeSeries, ...
     exportVisualizationRootDirectory, exportVisualizationPDFdirectory, thePDFfileName)
 
-
-    ff = PublicationReadyPlotLib.figureComponents('1x1 giant rectangular-double wide mosaic', ...
-        'darkScheme', true);
-
+  
+    if (1==2)
     RedBlueLUT = zeros(1024,3);
     RedBlueLUT(513,:) = ff.legendBackgroundColor;
     RedBlueLUT(514:1024,1) = ff.legendBackgroundColor(1) + (1-ff.legendBackgroundColor(1))*(1:511)/511;
@@ -19,12 +18,13 @@ function responseTimeSeriesForSingleMRGC(targetRGCindex, ...
     RedBlueLUT(512:-1:1,1) = ff.legendBackgroundColor(1);
     RedBlueLUT(512:-1:1,2) = ff.legendBackgroundColor(2);
     RedBlueLUT(512:-1:1,3) = ff.legendBackgroundColor(3) + (1-ff.legendBackgroundColor(3))*(1:512)/512;
-
+    end
 
     % Get ready for publication-quality visualization
     hFig = figure(6000); clf;
-    ff = PublicationReadyPlotLib.figureComponents('1x1 giant rectangular-double wide mosaic', ...
+    ff = PublicationReadyPlotLib.figureComponents(figureFormatForStaticResponseTimeSeries, ...
         'darkScheme', true);
+
     theAxes = PublicationReadyPlotLib.generatePanelAxes(hFig,ff);
     ax = theAxes{1,1};
     hold(ax,'on');
@@ -65,7 +65,13 @@ function responseTimeSeriesForSingleMRGC(targetRGCindex, ...
 
     timeLimits = [0 theTemporalSupportSeconds(end)]*1e3;
     responseLimits = [-1.0 1.0];
-    set(ax, 'XLim', timeLimits, 'YLim', responseLimits, 'XTick', 0:250:5000, 'YTick', -1:0.5:1);
+    if (timeLimits(end) < 1000)
+        tickIncrement = 100;
+    else
+        tickIncrement = 200;
+    end
+
+    set(ax, 'XLim', timeLimits, 'YLim', responseLimits, 'XTick', 0:tickIncrement:5000, 'YTick', -1:0.5:1);
     xlabel(ax, 'time (msec)');
     ylabel(ax, 'mRGC response');
 

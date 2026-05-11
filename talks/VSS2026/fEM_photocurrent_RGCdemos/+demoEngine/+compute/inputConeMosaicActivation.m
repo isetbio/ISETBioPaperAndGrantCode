@@ -144,6 +144,8 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
         [theConeMosaicSpatioTemporalExcitationResponse, ~, ~, ~, theConeExcitationsResponseTemporalSupportSeconds] = ...
                 theMRGCmosaic.inputConeMosaic.compute(theRetinalImage, ...
                 'withFixationalEyeMovements', true);
+
+         mCones = size(theConeMosaicSpatioTemporalExcitationResponse,3);
     end
 
     
@@ -187,7 +189,7 @@ function inputConeMosaicActivation(coneMosaicSpecies, opticsSubjectName, rgcMosa
     
     % Transform to cone modulations
     theConeMosaicSpatioTemporalModulationsResponse = bsxfun(@times, ...
-            bsxfun(@minus,theConeMosaicSpatioTemporalExcitationResponse, theConeMosaicNullSceneExcitationResponse), ...
+            bsxfun(@minus,theConeMosaicSpatioTemporalExcitationResponse, meanResponse), ...
             normalizationResponse);
 
     fprintf('mean cone excitations: %f\n', mean(meanResponse(:)));
