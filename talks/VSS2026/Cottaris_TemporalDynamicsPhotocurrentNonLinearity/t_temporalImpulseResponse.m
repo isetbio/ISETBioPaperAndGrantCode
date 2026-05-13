@@ -204,7 +204,7 @@ function theImpulseResponseFunctionData = ...
     theImpulseResponse = ifft(theDoubleSidedTTF, 'symmetric');
 
     fMax = max(temporalFrequencySupportHz);
-    dtSeconds = 1/(2*fMax)
+    dtSeconds = 1/(2*fMax);
     theTemporalSupportSeconds = (1:numel(theImpulseResponse)) * dtSeconds;
 
     theImpulseResponseFunctionData.weights = theImpulseResponse;
