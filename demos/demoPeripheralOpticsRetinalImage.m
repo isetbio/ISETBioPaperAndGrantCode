@@ -30,7 +30,9 @@ function demoPeripheralOpticsRetinalImage()
   
 
     % Whether to subtract the central refraction if needed
-    subtractCentralRefractionAsNeeded = true;
+    subtractCentralRefractionAsNeeded = ~true;
+
+    zeroCenterPSF = false;
 
     % Since we are dealing with a large stimulus, we will need optics 
     % sampled at a number of positions
@@ -55,15 +57,15 @@ function demoPeripheralOpticsRetinalImage()
             spatialSupportXDegs, spatialSupportYDegs, theSelectedImage);
     
 
-    for PolansSubjectRankOrder = 1:10
+    for PolansSubjectRankOrder = 1:1
         runTheSimulation(theConeMosaic, oiSamplingGridData, PolansSubjectRankOrder, ...
-            subtractCentralRefractionAsNeeded, theScene, theBackgroundScene, theFiguresDir, theDataDir);
+            subtractCentralRefractionAsNeeded, zeroCenterPSF, theScene, theBackgroundScene, theFiguresDir, theDataDir);
     end
 
 end
 
 function runTheSimulation(theConeMosaic, oiSamplingGridData, PolansSubjectRankOrder, ...
-    subtractCentralRefractionAsNeeded, theScene, theBackgroundScene, theFiguresDir, theDataDir)
+    subtractCentralRefractionAsNeeded, zeroCenterPSF, theScene, theBackgroundScene, theFiguresDir, theDataDir)
 
     % Form the data filename
     theDataFileName = fullfile(theDataDir, sprintf('simulationData_PolansSubjectRank%d.mat', PolansSubjectRankOrder));
@@ -87,7 +89,7 @@ function runTheSimulation(theConeMosaic, oiSamplingGridData, PolansSubjectRankOr
         'zernikeDataBase', 'Polans2015', ...
         'subjectID', testSubjectID, ...
         'subtractCentralRefraction', subtractCentralRefraction, ...
-        'zeroCenterPSF', true, ...
+        'zeroCenterPSF', zeroCenterPSF, ...
         'wavefrontSpatialSamples', 601, ...
         'pupilDiameterMM', 3.0, ...
         'refractiveErrorDiopters', 0.0, ...
@@ -111,10 +113,13 @@ function runTheSimulation(theConeMosaic, oiSamplingGridData, PolansSubjectRankOr
 
     if (isstruct(oiSamplingGridData))
 
-        % Visualize the merging weights
-        for oiPosIndex = 1:size(theMergingWeights,1)
-            hFig = visualizeTheMergingWeights(theConeMosaic, theMergingWeights(oiPosIndex,:), oiSamplingGridDegs);
-            NicePlot.exportFigToPDF(fullfile(theFiguresDir, sprintf('theMerginWeights_Position_%d.pdf', oiPosIndex)), hFig, 300);
+        visualizeTheMergingWeightDistributions = false;
+        if (visualizeTheMergingWeightDistributions)
+            % Visualize the merging weights
+            for oiPosIndex = 1:size(theMergingWeights,1)
+                hFig = visualizeTheMergingWeights(theConeMosaic, theMergingWeights(oiPosIndex,:), oiSamplingGridDegs);
+                NicePlot.exportFigToPDF(fullfile(theFiguresDir, sprintf('theMerginWeights_Position_%d.pdf', oiPosIndex)), hFig, 300);
+            end
         end
 
 
@@ -234,7 +239,7 @@ end
 
 function visualizeConeMosaicActivation(theConeMosaic, theConeMosaicActivation, theFiguresDir, thePDFfileName)
 
-    hFig = figure(3001); clf;
+    hFig = figure(4000); clf;
     set(hFig, 'Position', [10 10 430 1300]);
     set(hFig, 'Color', [1 1 1]);
     ax = subplot('Position', [0.06 0.07 0.93 0.93]);
@@ -249,7 +254,7 @@ function visualizeConeMosaicActivation(theConeMosaic, theConeMosaicActivation, t
 
     NicePlot.exportFigToPDF(fullfile(theFiguresDir, thePDFfileName), hFig, 300);
 
-    hFig = figure(3001); clf;
+    hFig = figure(4001); clf;
     set(hFig, 'Position', [10 10 1000 1000]);
     set(hFig, 'Color', [1 1 1]);
     ax = subplot('Position', [0.07 0.07 0.92 0.92]);
@@ -309,7 +314,7 @@ end
 
 
 function [spatialSupportXDegs, spatialSupportYDegs, theSelectedImage, imageHeightDegs] = loadSampleImages(theImageIndex)
-    load('/Users/nicolas/Downloads/sample_images.mat', 'sample_images')
+    load('fMRIsampleImages.mat')
     
     imageHeightDegs = 18;
 
