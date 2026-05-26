@@ -151,12 +151,13 @@ function t_examplesVSS2024talk(options)
     refractiveErrorDiopters = -0.0;
     customOpticsParams = struct( ...
         'modification', 'maxStrehlRatioWithResidualRefractionError', ...
-        'ZernikeDataBase', 'Polans2015', ...   % which optics Database
-        'subjectID', 10, ...                   % which subject ID
-        'pupilDiameterMM', 3.0, ...           % which pupil size (mm)
-        'refractiveErrorDiopters', refractiveErrorDiopters, ...   % whether to include a refractive error
-        'noLCA', false, ...                   % whether to include LCA
-        'zeroCenterPSF', true ...             % whether to zero-center the PSF
+        'ZernikeDataBase', 'Polans2015', ...                                % which optics Database
+        'subjectID', 10, ...                                                % which subject ID
+        'pupilDiameterMM', 3.0, ...                                         % which pupil size (mm)
+        'refractiveErrorDiopters', refractiveErrorDiopters, ...             % whether to include a refractive error
+        'noLCA', false, ...                                                 % whether to include LCA
+        'zeroCenterPSF', false ...                                          % old way of removing PSF offset
+        'withZeroedPistonAndTiltZernikeCoefficients', true ...              % new way of removing PSF offset
     );
     opticsToEmploy = struct('customOpticsParams', customOpticsParams);
 
